@@ -3,23 +3,19 @@ using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Media.Animation;
-using Windows.Graphics;
-using YTDownloader.Enums;
-using YTDownloader.Helpers.UI;
-using YTDownloader.Messages;
+using Microsoft.Windows.AppLifecycle;
+using Windows.ApplicationModel.Activation;
+using YTDOwnloader.Helpers;
 using YTDownloader.Services;
 using YTDownloader.ViewModels;
 using YTDownloader.ViewModels.Dialogs;
-using YTDownloader.Views;
 
 namespace YTDownloader;
 
-public partial class App : Application, IRecipient<ChangeThemeRequestMessage>
+public partial class App : Application
 {
-    private static Window? MainWindow;
+    private const string AppInstanceKey = "YTDownloader.MainApp";
+    private static MainWindow? _mainWindow;
 
     private readonly IServiceProvider _services;
     private readonly IMessenger _messenger;
@@ -47,50 +43,45 @@ public partial class App : Application, IRecipient<ChangeThemeRequestMessage>
     public static T GetService<T>()
         where T : class => ((App)Current)._services.GetRequiredService<T>();
 
-    public void Receive(ChangeThemeRequestMessage message) => ApplyTheme(message.Theme);
-
-    protected override async void OnLaunched(LaunchActivatedEventArgs args)
+    protected override async void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
     {
-        var rootFrame = new Frame { Content = new SplashPage() };
-        MainWindow = new Window
+        var currentInstance = AppInstance.FindOrRegisterForKey(AppInstanceKey);
+        if (!currentInstance.IsCurrent)
         {
-            ExtendsContentIntoTitleBar = true,
-            Title = "YT Downloader",
-            Content = rootFrame,
-        };
+            await currentInstance.RedirectActivationToAsync(
+                AppInstance.GetCurrent().GetActivatedEventArgs()
+            );
 
-        ConfigureWindow(MainWindow);
+            Environment.Exit(0);
+            return;
+        }
+        currentInstance.Activated += OnAppInstanceActivated;
 
-        await Task.Delay(50);
-        MainWindow.Activate();
+        var settings = GetService<SettingsService>();
+        await settings.LoadAsync();
 
-        await InitializeAppAsync();
+        _mainWindow = new MainWindow();
 
-        MainWindow.SystemBackdrop = new MicaBackdrop();
-        ApplyTheme(GetService<SettingsService>().Current.Theme);
+        await Task.Delay(50); // Small delay to avoid black window
+        _mainWindow.Activate();
 
-        rootFrame.Navigate(typeof(MainPage), null, new DrillInNavigationTransitionInfo());
+        await Task.Delay(400); // Small delay to ensure the main window is fully ready before navigating
+        _mainWindow.NavigateToShell();
     }
 
-    private void ApplyTheme(ThemeOption theme) =>
-        ThemeHelper.ApplyTheme(MainWindow!, ThemeHelper.ConvertThemeOptionToElementTheme(theme));
+    // --- Activation Handling ---
 
-    private void ConfigureWindow(Window window)
+    private void OnAppInstanceActivated(object? sender, AppActivationArguments e)
     {
-        window.AppWindow.SetIcon("Assets/AppIcon.ico");
+        _mainWindow?.DispatcherQueue.TryEnqueue(() =>
+        {
+            WindowHelper.BringToFront(_mainWindow);
 
-        var win32Service = new Win32WindowService(window);
-        win32Service.SetWindowMinMaxSize(new Win32WindowService.POINT() { x = 430, y = 680 });
-
-        var scaleFactor = win32Service.GetSystemDPI() / 96.0;
-        window.AppWindow.Resize(new SizeInt32((int)(430 * scaleFactor), (int)(680 * scaleFactor)));
-    }
-
-    private async Task InitializeAppAsync()
-    {
-        // We keep this method separate for organizational purposes.
-        // Today it's purely aesthetic. Tomorrow, if we need to load anything
-        // large during app startup, we can simply change it here without altering OnLaunched.
-        await Task.Delay(400);
+            if (e.Kind == ExtendedActivationKind.Protocol)
+            {
+                var uri = (e.Data as ProtocolActivatedEventArgs)?.Uri;
+                // Handle deep links in the future if necessary
+            }
+        });
     }
 }
