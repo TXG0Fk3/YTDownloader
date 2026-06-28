@@ -69,14 +69,14 @@
                 <toolkit:SettingsExpander Grid.Row="3"
                                           HorizontalAlignment="Stretch"
                                           HorizontalContentAlignment="Stretch"
-                                          Description="Manage your downloads"
+                                          Description="Default folder and save behavior"
                                           Header="Downloads"
                                           HeaderIcon="{ui:FontIcon Glyph=}">
                     <toolkit:SettingsExpander.Items>
                         <toolkit:SettingsCard Description="{x:Bind ViewModel.DefaultDownloadsPath, Mode=OneWay}" Header="Default Downloads Folder">
                             <Button Grid.Column="1" Command="{x:Bind ViewModel.SelectDefaultDownloadsFolderCommand}" Content="Select Folder" />
                         </toolkit:SettingsCard>
-                        <toolkit:SettingsCard Description="The program will always ask where to save the downloaded files" Header="Always ask where to save files">
+                        <toolkit:SettingsCard Description="Ask for a save location before each download" Header="Always ask where to save files">
                             <ToggleSwitch Grid.Row="1"
                                           Grid.Column="1"
                                           IsOn="{x:Bind ViewModel.AlwaysAskWhereSave, Mode=TwoWay}"
