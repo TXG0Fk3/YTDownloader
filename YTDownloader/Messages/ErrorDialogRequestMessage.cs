@@ -1,4 +1,3 @@
-namespace YTDownloader.Messages
-{
-    public record ErrorDialogRequestMessage(string ErrorMessage);
-}
+namespace YTDownloader.Messages;
+
+public record ErrorDialogRequestMessage(string ErrorMessage);

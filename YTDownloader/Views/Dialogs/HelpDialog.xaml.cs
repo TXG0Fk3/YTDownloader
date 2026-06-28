@@ -1,12 +1,11 @@
 using Microsoft.UI.Xaml.Controls;
 
-namespace YTDownloader.Views.Dialogs
+namespace YTDownloader.Views.Dialogs;
+
+public sealed partial class HelpDialog : ContentDialog
 {
-    public sealed partial class HelpDialog : ContentDialog
+    public HelpDialog()
     {
-        public HelpDialog()
-        {
-            InitializeComponent();
-        }
+        InitializeComponent();
     }
 }

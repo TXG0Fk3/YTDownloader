@@ -1,12 +1,11 @@
-namespace YTDownloader.Enums
+namespace YTDownloader.Enums;
+
+public enum DownloadStatus
 {
-    public enum DownloadStatus
-    {
-        Pending,
-        Downloading,
-        Converting,
-        Completed,
-        Error,
-        Cancelled,
-    }
+    Pending,
+    Downloading,
+    Converting,
+    Completed,
+    Error,
+    Cancelled,
 }

@@ -1,25 +1,20 @@
 using System;
 using Microsoft.UI.Xaml.Data;
 
-namespace YTDownloader.Helpers.UI.Converters
-{
-    public class BooleanNegationConverter : IValueConverter
-    {
-        public object Convert(object value, Type targetType, object parameter, string language)
-        {
-            if (value is bool boolValue)
-            {
-                return !boolValue;
-            }
+namespace YTDownloader.Helpers.UI.Converters;
 
-            return value;
+public class BooleanNegationConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, string language)
+    {
+        if (value is bool boolValue)
+        {
+            return !boolValue;
         }
 
-        public object ConvertBack(
-            object value,
-            Type targetType,
-            object parameter,
-            string language
-        ) => throw new NotImplementedException();
+        return value;
     }
+
+    public object ConvertBack(object value, Type targetType, object parameter, string language) =>
+        throw new NotImplementedException();
 }

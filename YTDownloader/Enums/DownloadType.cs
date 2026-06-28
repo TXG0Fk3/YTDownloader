@@ -1,8 +1,7 @@
-namespace YTDownloader.Enums
+namespace YTDownloader.Enums;
+
+public enum DownloadType
 {
-    public enum DownloadType
-    {
-        Video,
-        Audio,
-    }
+    Video,
+    Audio,
 }

@@ -8,78 +8,75 @@ using YTDownloader.Models;
 using YTDownloader.Services;
 using YTDownloader.ViewModels.Components;
 
-namespace YTDownloader.ViewModels
+namespace YTDownloader.ViewModels;
+
+public partial class MainPageViewModel
+    : ObservableObject,
+        IRecipient<DownloadRequestMessage>,
+        IRecipient<RetryDownloadRequestMessage>,
+        IRecipient<RemoveDownloadRequestMessage>,
+        IRecipient<ErrorDialogRequestMessage>
 {
-    public partial class MainPageViewModel
-        : ObservableObject,
-            IRecipient<DownloadRequestMessage>,
-            IRecipient<RetryDownloadRequestMessage>,
-            IRecipient<RemoveDownloadRequestMessage>,
-            IRecipient<ErrorDialogRequestMessage>
+    private readonly DownloadsService _downloadsService;
+    private readonly DialogService _dialogService;
+    private readonly IMessenger _messenger;
+
+    public ObservableCollection<IDownloadableViewModel> Downloads { get; private set; } = new();
+
+    public bool IsDownloadItemsEmpty => Downloads.Count == 0;
+
+    public MainPageViewModel(
+        DownloadsService downloadsService,
+        DialogService dialogService,
+        IMessenger messenger
+    )
     {
-        private readonly DownloadsService _downloadsService;
-        private readonly DialogService _dialogService;
-        private readonly IMessenger _messenger;
+        _downloadsService = downloadsService;
+        _dialogService = dialogService;
+        _messenger = messenger;
 
-        public ObservableCollection<IDownloadableViewModel> Downloads { get; private set; } = new();
+        _messenger.RegisterAll(this);
 
-        public bool IsDownloadItemsEmpty => Downloads.Count == 0;
+        Downloads.CollectionChanged += (s, e) => OnPropertyChanged(nameof(IsDownloadItemsEmpty));
+    }
 
-        public MainPageViewModel(
-            DownloadsService downloadsService,
-            DialogService dialogService,
-            IMessenger messenger
-        )
-        {
-            _downloadsService = downloadsService;
-            _dialogService = dialogService;
-            _messenger = messenger;
+    public void Receive(DownloadRequestMessage message) => OnEnqueueDownload(message.DownloadInfo);
 
-            _messenger.RegisterAll(this);
+    public void Receive(RetryDownloadRequestMessage message) => OnRetryDownload(message.Item);
 
-            Downloads.CollectionChanged += (s, e) =>
-                OnPropertyChanged(nameof(IsDownloadItemsEmpty));
-        }
+    public void Receive(RemoveDownloadRequestMessage message) =>
+        OnRemoveDownload(message.DownloadableViewModel);
 
-        public void Receive(DownloadRequestMessage message) =>
-            OnEnqueueDownload(message.DownloadInfo);
+    public void Receive(ErrorDialogRequestMessage message) => _ = OnError(message.ErrorMessage);
 
-        public void Receive(RetryDownloadRequestMessage message) => OnRetryDownload(message.Item);
+    [RelayCommand]
+    private async Task OnAddDownloadAsync() => await _dialogService.ShowDetailsDialogAsync();
 
-        public void Receive(RemoveDownloadRequestMessage message) =>
-            OnRemoveDownload(message.DownloadableViewModel);
+    [RelayCommand]
+    private async Task OnHelp() => await _dialogService.ShowHelpDialogAsync();
 
-        public void Receive(ErrorDialogRequestMessage message) => _ = OnError(message.ErrorMessage);
+    [RelayCommand]
+    private async Task OnSettings() => await _dialogService.ShowSettingsDialogAsync();
 
-        [RelayCommand]
-        private async Task OnAddDownloadAsync() => await _dialogService.ShowDetailsDialogAsync();
+    private async Task OnError(string errorMessage) =>
+        await _dialogService.ShowErrorDialogAsync(errorMessage);
 
-        [RelayCommand]
-        private async Task OnHelp() => await _dialogService.ShowHelpDialogAsync();
+    private void OnEnqueueDownload(IDownloadable downloadable)
+    {
+        if (downloadable is DownloadItem item)
+            Downloads.Add(new DownloadItemViewModel(item, _messenger));
+        else if (downloadable is DownloadGroup group)
+            Downloads.Add(new DownloadGroupViewModel(group, _messenger));
 
-        [RelayCommand]
-        private async Task OnSettings() => await _dialogService.ShowSettingsDialogAsync();
+        _ = _downloadsService.EnqueueDownloadable(downloadable);
+    }
 
-        private async Task OnError(string errorMessage) =>
-            await _dialogService.ShowErrorDialogAsync(errorMessage);
+    private void OnRetryDownload(DownloadItem item) =>
+        _ = _downloadsService.EnqueueDownloadable(item);
 
-        private void OnEnqueueDownload(IDownloadable downloadable)
-        {
-            if (downloadable is DownloadItem item)
-                Downloads.Add(new DownloadItemViewModel(item, _messenger));
-            else if (downloadable is DownloadGroup group)
-                Downloads.Add(new DownloadGroupViewModel(group, _messenger));
-
-            _ = _downloadsService.EnqueueDownloadable(downloadable);
-        }
-
-        private void OnRetryDownload(DownloadItem item) =>
-            _ = _downloadsService.EnqueueDownloadable(item);
-
-        private void OnRemoveDownload(IDownloadableViewModel vm)
-        {
-            Downloads.Remove(vm);
-            vm.Dispose();
-        }
+    private void OnRemoveDownload(IDownloadableViewModel vm)
+    {
+        Downloads.Remove(vm);
+        vm.Dispose();
     }
 }

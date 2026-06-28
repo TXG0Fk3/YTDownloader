@@ -2,26 +2,25 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using YTDownloader.ViewModels.Dialogs;
 
-namespace YTDownloader.Views.Dialogs
+namespace YTDownloader.Views.Dialogs;
+
+public sealed partial class DetailsDialog : ContentDialog
 {
-    public sealed partial class DetailsDialog : ContentDialog
+    private DetailsDialogViewModel ViewModel { get; set; }
+
+    public DetailsDialog()
     {
-        private DetailsDialogViewModel ViewModel { get; set; }
+        InitializeComponent();
 
-        public DetailsDialog()
+        ViewModel = App.GetService<DetailsDialogViewModel>();
+        DataContext = ViewModel;
+    }
+
+    private void UrlTextBox_KeyDown(object sender, KeyRoutedEventArgs e)
+    {
+        if (e.Key == Windows.System.VirtualKey.Enter)
         {
-            InitializeComponent();
-
-            ViewModel = App.GetService<DetailsDialogViewModel>();
-            DataContext = ViewModel;
-        }
-
-        private void UrlTextBox_KeyDown(object sender, KeyRoutedEventArgs e)
-        {
-            if (e.Key == Windows.System.VirtualKey.Enter)
-            {
-                ViewModel.LoadContentInfoCommand.Execute(null);
-            }
+            ViewModel.LoadContentInfoCommand.Execute(null);
         }
     }
 }

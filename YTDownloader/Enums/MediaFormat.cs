@@ -1,8 +1,7 @@
-namespace YTDownloader.Enums
+namespace YTDownloader.Enums;
+
+public enum MediaFormat
 {
-    public enum MediaFormat
-    {
-        Mp4,
-        Mp3,
-    }
+    Mp4,
+    Mp3,
 }

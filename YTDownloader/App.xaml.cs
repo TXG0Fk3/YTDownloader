@@ -15,88 +15,82 @@ using YTDownloader.ViewModels;
 using YTDownloader.ViewModels.Dialogs;
 using YTDownloader.Views;
 
-namespace YTDownloader
+namespace YTDownloader;
+
+public partial class App : Application, IRecipient<ChangeThemeRequestMessage>
 {
-    public partial class App : Application, IRecipient<ChangeThemeRequestMessage>
+    private static Window? MainWindow;
+
+    private readonly IServiceProvider _services;
+    private readonly IMessenger _messenger;
+
+    public App()
     {
-        private static Window? MainWindow;
+        InitializeComponent();
 
-        private readonly IServiceProvider _services;
-        private readonly IMessenger _messenger;
+        var services = new ServiceCollection();
+        services.AddTransient<MainPageViewModel>();
+        services.AddTransient<DetailsDialogViewModel>();
+        services.AddTransient<SettingsDialogViewModel>();
 
-        public App()
+        services.AddSingleton<YoutubeService>();
+        services.AddSingleton<DownloadsService>();
+        services.AddSingleton<SettingsService>();
+        services.AddSingleton<DialogService>();
+        services.AddSingleton<IMessenger>(WeakReferenceMessenger.Default);
+        _services = services.BuildServiceProvider();
+
+        _messenger = GetService<IMessenger>();
+        _messenger.RegisterAll(this);
+    }
+
+    public static T GetService<T>()
+        where T : class => ((App)Current)._services.GetRequiredService<T>();
+
+    public void Receive(ChangeThemeRequestMessage message) => ApplyTheme(message.Theme);
+
+    protected override async void OnLaunched(LaunchActivatedEventArgs args)
+    {
+        var rootFrame = new Frame { Content = new SplashPage() };
+        MainWindow = new Window
         {
-            InitializeComponent();
+            ExtendsContentIntoTitleBar = true,
+            Title = "YT Downloader",
+            Content = rootFrame,
+        };
 
-            var services = new ServiceCollection();
-            services.AddTransient<MainPageViewModel>();
-            services.AddTransient<DetailsDialogViewModel>();
-            services.AddTransient<SettingsDialogViewModel>();
+        ConfigureWindow(MainWindow);
 
-            services.AddSingleton<YoutubeService>();
-            services.AddSingleton<DownloadsService>();
-            services.AddSingleton<SettingsService>();
-            services.AddSingleton<DialogService>();
-            services.AddSingleton<IMessenger>(WeakReferenceMessenger.Default);
-            _services = services.BuildServiceProvider();
+        await Task.Delay(50);
+        MainWindow.Activate();
 
-            _messenger = GetService<IMessenger>();
-            _messenger.RegisterAll(this);
-        }
+        await InitializeAppAsync();
 
-        public static T GetService<T>()
-            where T : class => ((App)Current)._services.GetRequiredService<T>();
+        MainWindow.SystemBackdrop = new MicaBackdrop();
+        ApplyTheme(GetService<SettingsService>().Current.Theme);
 
-        public void Receive(ChangeThemeRequestMessage message) => ApplyTheme(message.Theme);
+        rootFrame.Navigate(typeof(MainPage), null, new DrillInNavigationTransitionInfo());
+    }
 
-        protected override async void OnLaunched(LaunchActivatedEventArgs args)
-        {
-            var rootFrame = new Frame { Content = new SplashPage() };
-            MainWindow = new Window
-            {
-                ExtendsContentIntoTitleBar = true,
-                Title = "YT Downloader",
-                Content = rootFrame,
-            };
+    private void ApplyTheme(ThemeOption theme) =>
+        ThemeHelper.ApplyTheme(MainWindow!, ThemeHelper.ConvertThemeOptionToElementTheme(theme));
 
-            ConfigureWindow(MainWindow);
+    private void ConfigureWindow(Window window)
+    {
+        window.AppWindow.SetIcon("Assets/AppIcon.ico");
 
-            await Task.Delay(50);
-            MainWindow.Activate();
+        var win32Service = new Win32WindowService(window);
+        win32Service.SetWindowMinMaxSize(new Win32WindowService.POINT() { x = 430, y = 680 });
 
-            await InitializeAppAsync();
+        var scaleFactor = win32Service.GetSystemDPI() / 96.0;
+        window.AppWindow.Resize(new SizeInt32((int)(430 * scaleFactor), (int)(680 * scaleFactor)));
+    }
 
-            MainWindow.SystemBackdrop = new MicaBackdrop();
-            ApplyTheme(GetService<SettingsService>().Current.Theme);
-
-            rootFrame.Navigate(typeof(MainPage), null, new DrillInNavigationTransitionInfo());
-        }
-
-        private void ApplyTheme(ThemeOption theme) =>
-            ThemeHelper.ApplyTheme(
-                MainWindow!,
-                ThemeHelper.ConvertThemeOptionToElementTheme(theme)
-            );
-
-        private void ConfigureWindow(Window window)
-        {
-            window.AppWindow.SetIcon("Assets/AppIcon.ico");
-
-            var win32Service = new Win32WindowService(window);
-            win32Service.SetWindowMinMaxSize(new Win32WindowService.POINT() { x = 430, y = 680 });
-
-            var scaleFactor = win32Service.GetSystemDPI() / 96.0;
-            window.AppWindow.Resize(
-                new SizeInt32((int)(430 * scaleFactor), (int)(680 * scaleFactor))
-            );
-        }
-
-        private async Task InitializeAppAsync()
-        {
-            // We keep this method separate for organizational purposes.
-            // Today it's purely aesthetic. Tomorrow, if we need to load anything
-            // large during app startup, we can simply change it here without altering OnLaunched.
-            await Task.Delay(400);
-        }
+    private async Task InitializeAppAsync()
+    {
+        // We keep this method separate for organizational purposes.
+        // Today it's purely aesthetic. Tomorrow, if we need to load anything
+        // large during app startup, we can simply change it here without altering OnLaunched.
+        await Task.Delay(400);
     }
 }

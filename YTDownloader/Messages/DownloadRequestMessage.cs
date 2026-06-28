@@ -1,6 +1,5 @@
 using YTDownloader.Models;
 
-namespace YTDownloader.Messages
-{
-    public record DownloadRequestMessage(IDownloadable DownloadInfo);
-}
+namespace YTDownloader.Messages;
+
+public record DownloadRequestMessage(IDownloadable DownloadInfo);

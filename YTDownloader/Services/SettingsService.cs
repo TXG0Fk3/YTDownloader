@@ -4,77 +4,76 @@ using System.Text.Json;
 using YTDownloader.Enums;
 using YTDownloader.Models;
 
-namespace YTDownloader.Services
+namespace YTDownloader.Services;
+
+public class SettingsService
 {
-    public class SettingsService
+    private const string FileName = "config.json";
+    private readonly string _filePath;
+
+    public AppSettings Current { get; private set; }
+
+    public SettingsService()
     {
-        private const string FileName = "config.json";
-        private readonly string _filePath;
+        _filePath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            "YT Downloader",
+            FileName
+        );
 
-        public AppSettings Current { get; private set; }
+        Directory.CreateDirectory(Path.GetDirectoryName(_filePath)!);
 
-        public SettingsService()
+        Current = Load();
+    }
+
+    private AppSettings Load()
+    {
+        var defaultSettings = new AppSettings(
+            Theme: ThemeOption.System,
+            DefaultDownloadsPath: Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                "Downloads"
+            ),
+            AlwaysAskWhereSave: true
+        );
+
+        if (!File.Exists(_filePath))
+            return defaultSettings;
+
+        try
         {
-            _filePath = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                "YT Downloader",
-                FileName
-            );
+            var json = File.ReadAllText(_filePath);
+            var settings = JsonSerializer.Deserialize<AppSettings>(json);
 
-            Directory.CreateDirectory(Path.GetDirectoryName(_filePath)!);
-
-            Current = Load();
-        }
-
-        private AppSettings Load()
-        {
-            var defaultSettings = new AppSettings(
-                Theme: ThemeOption.System,
-                DefaultDownloadsPath: Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-                    "Downloads"
-                ),
-                AlwaysAskWhereSave: true
-            );
-
-            if (!File.Exists(_filePath))
+            if (settings is null)
                 return defaultSettings;
 
-            try
+            if (
+                string.IsNullOrWhiteSpace(settings.DefaultDownloadsPath)
+                || !Directory.Exists(settings.DefaultDownloadsPath)
+            )
             {
-                var json = File.ReadAllText(_filePath);
-                var settings = JsonSerializer.Deserialize<AppSettings>(json);
-
-                if (settings is null)
-                    return defaultSettings;
-
-                if (
-                    string.IsNullOrWhiteSpace(settings.DefaultDownloadsPath)
-                    || !Directory.Exists(settings.DefaultDownloadsPath)
-                )
+                return settings with
                 {
-                    return settings with
-                    {
-                        DefaultDownloadsPath = defaultSettings.DefaultDownloadsPath,
-                    };
-                }
+                    DefaultDownloadsPath = defaultSettings.DefaultDownloadsPath,
+                };
+            }
 
-                return settings;
-            }
-            catch
-            {
-                return defaultSettings;
-            }
+            return settings;
         }
-
-        public void Save(AppSettings settings)
+        catch
         {
-            Current = settings;
-            var json = JsonSerializer.Serialize(
-                settings,
-                new JsonSerializerOptions { WriteIndented = true }
-            );
-            File.WriteAllText(_filePath, json);
+            return defaultSettings;
         }
+    }
+
+    public void Save(AppSettings settings)
+    {
+        Current = settings;
+        var json = JsonSerializer.Serialize(
+            settings,
+            new JsonSerializerOptions { WriteIndented = true }
+        );
+        File.WriteAllText(_filePath, json);
     }
 }
