@@ -1,8 +1,11 @@
+using System;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
+using YTDownloader.Enums;
 using YTDownloader.Messages;
 using YTDownloader.Models;
 using YTDownloader.Services;
@@ -18,26 +21,36 @@ public partial class ShellPageViewModel
         IRecipient<ErrorDialogRequestMessage>
 {
     private readonly DownloadsService _downloadsService;
+    private readonly SettingsService _settingsService;
     private readonly DialogService _dialogService;
     private readonly IMessenger _messenger;
 
+    private bool _isInitializing = true;
+
     public ObservableCollection<IDownloadableViewModel> Downloads { get; private set; } = new();
+
+    [ObservableProperty]
+    public partial SortDirection SortDirection { get; set; }
 
     public bool IsDownloadItemsEmpty => Downloads.Count == 0;
 
     public ShellPageViewModel(
         DownloadsService downloadsService,
+        SettingsService settingsService,
         DialogService dialogService,
         IMessenger messenger
     )
     {
         _downloadsService = downloadsService;
+        _settingsService = settingsService;
         _dialogService = dialogService;
         _messenger = messenger;
 
         _messenger.RegisterAll(this);
 
+        SortDirection = _settingsService.Current.DownloadsSortDirection;
         Downloads.CollectionChanged += (s, e) => OnPropertyChanged(nameof(IsDownloadItemsEmpty));
+        _isInitializing = false;
     }
 
     public void Receive(DownloadRequestMessage message) => OnEnqueueDownload(message.DownloadInfo);
@@ -48,6 +61,9 @@ public partial class ShellPageViewModel
         OnRemoveDownload(message.DownloadableViewModel);
 
     public void Receive(ErrorDialogRequestMessage message) => _ = OnError(message.ErrorMessage);
+
+    [RelayCommand]
+    private void SetSortDirection(string value) => SortDirection = Enum.Parse<SortDirection>(value);
 
     [RelayCommand]
     private async Task OnAddDownloadAsync() => await _dialogService.ShowDetailsDialogAsync();
@@ -63,10 +79,17 @@ public partial class ShellPageViewModel
 
     private void OnEnqueueDownload(IDownloadable downloadable)
     {
-        if (downloadable is DownloadItem item)
-            Downloads.Add(new DownloadItemViewModel(item, _messenger));
-        else if (downloadable is DownloadGroup group)
-            Downloads.Add(new DownloadGroupViewModel(group, _messenger));
+        IDownloadableViewModel vm = downloadable switch
+        {
+            DownloadItem item => new DownloadItemViewModel(item, _messenger),
+            DownloadGroup group => new DownloadGroupViewModel(group, _messenger),
+            _ => throw new InvalidOperationException("Not supported type"),
+        };
+
+        if (SortDirection == SortDirection.Descending)
+            Downloads.Insert(0, vm);
+        else
+            Downloads.Add(vm);
 
         _ = _downloadsService.EnqueueDownloadable(downloadable);
     }
@@ -78,5 +101,18 @@ public partial class ShellPageViewModel
     {
         Downloads.Remove(vm);
         vm.Dispose();
+    }
+
+    async partial void OnSortDirectionChanged(SortDirection value)
+    {
+        if (_isInitializing)
+            return;
+        _settingsService.Set(s => s.DownloadsSortDirection, value);
+
+        var items = Downloads.ToArray();
+        Downloads.Clear();
+
+        foreach (var item in items.Reverse())
+            Downloads.Add(item);
     }
 }

@@ -18,6 +18,7 @@
             </ResourceDictionary.MergedDictionaries>
 
             <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+            <converters:EnumToBooleanConverter x:Key="EnumToBooleanConverter" />
         </ResourceDictionary>
     </Page.Resources>
 
@@ -39,12 +40,39 @@
 
         <!--  Downloads  -->
         <Grid Grid.Row="1" RowDefinitions="Auto, *">
-            <!--  Title  -->
-            <TextBlock Grid.Row="0"
-                       Margin="27,12,0,12"
-                       FontSize="16"
-                       Style="{StaticResource BodyStrongTextBlockStyle}"
-                       Text="Downloads" />
+            <!--  Title & Sort Button  -->
+            <Grid Grid.Row="0" Margin="27,8" ColumnDefinitions="Auto, *, Auto">
+                <TextBlock Grid.Column="0"
+                           VerticalAlignment="Center"
+                           FontSize="16"
+                           Style="{StaticResource BodyStrongTextBlockStyle}"
+                           Text="Downloads" />
+
+                <DropDownButton Grid.Column="2"
+                                VerticalAlignment="Center"
+                                Background="Transparent"
+                                BorderBrush="Transparent">
+                    <DropDownButton.Content>
+                        <FontIcon FontSize="22" Glyph="&#xE8CB;" />
+                    </DropDownButton.Content>
+                    <DropDownButton.Flyout>
+                        <MenuFlyout Placement="Bottom">
+                            <RadioMenuFlyoutItem Command="{x:Bind ViewModel.SetSortDirectionCommand}"
+                                                 CommandParameter="Ascending"
+                                                 GroupName="Orientation"
+                                                 Icon="Up"
+                                                 IsChecked="{x:Bind ViewModel.SortDirection, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter=Ascending, Mode=OneWay}"
+                                                 Text="Ascending" />
+                            <RadioMenuFlyoutItem Command="{x:Bind ViewModel.SetSortDirectionCommand}"
+                                                 CommandParameter="Descending"
+                                                 GroupName="Orientation"
+                                                 Icon="{ui:FontIcon Glyph=&#xE74B;}"
+                                                 IsChecked="{x:Bind ViewModel.SortDirection, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter=Descending, Mode=OneWay}"
+                                                 Text="Descending" />
+                        </MenuFlyout>
+                    </DropDownButton.Flyout>
+                </DropDownButton>
+            </Grid>
 
             <ScrollViewer Grid.Row="1">
                 <Grid Margin="12,0,12,0">
