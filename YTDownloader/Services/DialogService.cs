@@ -3,17 +3,16 @@ using System.Threading.Tasks;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.Windows.Storage.Pickers;
-using YTDownloader.Helpers.UI;
 using YTDownloader.Views.Dialogs;
 
 namespace YTDownloader.Services;
 
 public class DialogService
 {
-    private readonly SettingsService _settingsService;
-    private XamlRoot _xamlRoot;
+    private XamlRoot? _xamlRoot;
 
-    public DialogService(SettingsService settingsService) => _settingsService = settingsService;
+    private ElementTheme AppTheme =>
+        _xamlRoot?.Content is FrameworkElement fe ? fe.RequestedTheme : ElementTheme.Default;
 
     public void Initialize(XamlRoot root) => _xamlRoot = root;
 
@@ -28,7 +27,9 @@ public class DialogService
 
     public async Task<string?> OpenFolderPickerAsync()
     {
-        var folderPicker = new FolderPicker(_xamlRoot.ContentIslandEnvironment.AppWindowId)
+        ThrowIfXamlRootNotInitialized();
+
+        var folderPicker = new FolderPicker(_xamlRoot!.ContentIslandEnvironment.AppWindowId)
         {
             SuggestedStartLocation = PickerLocationId.Desktop,
         };
@@ -39,14 +40,16 @@ public class DialogService
 
     private async Task ShowDialogAsync(ContentDialog dialog)
     {
-        if (_xamlRoot != null)
-        {
-            dialog.XamlRoot = _xamlRoot;
-            dialog.RequestedTheme = ThemeHelper.ConvertThemeOptionToElementTheme(
-                _settingsService.Current.Theme
-            );
+        ThrowIfXamlRootNotInitialized();
 
-            await dialog.ShowAsync();
-        }
+        dialog.XamlRoot = _xamlRoot;
+        dialog.RequestedTheme = AppTheme;
+        await dialog.ShowAsync();
+    }
+
+    private void ThrowIfXamlRootNotInitialized()
+    {
+        if (_xamlRoot == null)
+            throw new InvalidOperationException("XamlRoot must be initialized.");
     }
 }
