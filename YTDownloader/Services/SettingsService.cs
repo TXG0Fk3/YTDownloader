@@ -1,79 +1,103 @@
 using System;
 using System.IO;
+using System.Linq.Expressions;
+using System.Reflection;
 using System.Text.Json;
-using YTDownloader.Enums;
-using YTDownloader.Models;
+using System.Text.Json.Serialization;
+using System.Threading.Tasks;
+using YTDownloader.Models.Settings;
+using YTDOwnloader.Models.Settings;
 
 namespace YTDownloader.Services;
 
 public class SettingsService
 {
-    private const string FileName = "config.json";
     private readonly string _filePath;
+    private readonly JsonSerializerOptions _jsonOptions;
+    private AppSettings _current = new();
 
-    public AppSettings Current { get; private set; }
+    public AppSettings Current => _current;
+    public event EventHandler<SettingsChangedEventArgs>? SettingChanged;
 
     public SettingsService()
     {
         _filePath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "YT Downloader",
-            FileName
+            "config.json"
         );
 
-        Directory.CreateDirectory(Path.GetDirectoryName(_filePath)!);
-
-        Current = Load();
+        _jsonOptions = new JsonSerializerOptions
+        {
+            WriteIndented = true,
+            Converters = { new JsonStringEnumConverter() },
+        };
     }
 
-    private AppSettings Load()
+    public async Task LoadAsync()
     {
-        var defaultSettings = new AppSettings(
-            Theme: ThemeOption.System,
-            DefaultDownloadsPath: Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-                "Downloads"
-            ),
-            AlwaysAskWhereSave: true
-        );
-
         if (!File.Exists(_filePath))
-            return defaultSettings;
+        {
+            _current = new AppSettings();
+            return;
+        }
 
         try
         {
-            var json = File.ReadAllText(_filePath);
-            var settings = JsonSerializer.Deserialize<AppSettings>(json);
-
-            if (settings is null)
-                return defaultSettings;
-
-            if (
-                string.IsNullOrWhiteSpace(settings.DefaultDownloadsPath)
-                || !Directory.Exists(settings.DefaultDownloadsPath)
-            )
-            {
-                return settings with
-                {
-                    DefaultDownloadsPath = defaultSettings.DefaultDownloadsPath,
-                };
-            }
-
-            return settings;
+            var json = await File.ReadAllTextAsync(_filePath);
+            _current =
+                JsonSerializer.Deserialize<AppSettings>(json, _jsonOptions) ?? new AppSettings();
         }
         catch
         {
-            return defaultSettings;
+            _current = new AppSettings();
         }
     }
 
-    public void Save(AppSettings settings)
+    public async Task SaveAsync()
     {
-        Current = settings;
-        var json = JsonSerializer.Serialize(
-            settings,
-            new JsonSerializerOptions { WriteIndented = true }
-        );
-        File.WriteAllText(_filePath, json);
+        var json = JsonSerializer.Serialize(_current, _jsonOptions);
+        var tmpPath = _filePath + ".tmp";
+
+        try
+        {
+            await File.WriteAllTextAsync(tmpPath, json);
+            File.Move(tmpPath, _filePath, overwrite: true);
+        }
+        catch { }
     }
+
+    // Always use Set() to mutate settings instead of accessing Current properties directly.
+    // Set() fires SettingChanged, which MainWindow listens to for applying theme changes at runtime.
+    // Direct mutation via Current bypasses the event and changes won't be reflected until restart.
+    public void Set<T>(Expression<Func<AppSettings, T>> selector, T value)
+    {
+        Expression body = selector.Body;
+        if (body is UnaryExpression unary)
+            body = unary.Operand;
+
+        if (body is not MemberExpression memberExpr)
+            throw new ArgumentException(
+                "Selector must be a property access expression.",
+                nameof(selector)
+            );
+
+        if (memberExpr.Member is not PropertyInfo propInfo)
+            throw new ArgumentException("Selector must target a property.", nameof(selector));
+
+        var oldValue = propInfo.GetValue(_current);
+        propInfo.SetValue(_current, value);
+
+        SettingChanged?.Invoke(
+            this,
+            new SettingsChangedEventArgs
+            {
+                PropertyName = propInfo.Name,
+                OldValue = oldValue,
+                NewValue = value,
+            }
+        );
+    }
+
+    public void Reset() => _current = new AppSettings();
 }

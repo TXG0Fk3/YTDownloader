@@ -5,8 +5,6 @@ using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using YTDownloader.Enums;
 using YTDownloader.Helpers;
-using YTDownloader.Messages;
-using YTDownloader.Models;
 using YTDownloader.Services;
 
 namespace YTDownloader.ViewModels.Dialogs;
@@ -19,11 +17,11 @@ public partial class SettingsDialogViewModel : ObservableObject
 
     public string YTDownloaderVersion { get; } = AppInfoHelper.Version;
 
-    public IReadOnlyList<ThemeOption> ThemeOptions { get; } =
-        new List<ThemeOption>() { ThemeOption.Light, ThemeOption.Dark, ThemeOption.System };
+    public IReadOnlyList<ThemeMode> ThemeOptions { get; } =
+        new List<ThemeMode>() { ThemeMode.Light, ThemeMode.Dark, ThemeMode.System };
 
     [ObservableProperty]
-    public partial ThemeOption SelectedThemeOption { get; set; }
+    public partial ThemeMode SelectedThemeOption { get; set; }
 
     [ObservableProperty]
     public partial string DefaultDownloadsPath { get; set; }
@@ -47,7 +45,7 @@ public partial class SettingsDialogViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void OnSelectTheme() => SaveSettings();
+    private async Task OnSelectTheme() => await SaveSettings();
 
     [RelayCommand]
     private async Task OnSelectDefaultDownloadsFolder()
@@ -56,22 +54,19 @@ public partial class SettingsDialogViewModel : ObservableObject
         if (!string.IsNullOrEmpty(path))
         {
             DefaultDownloadsPath = path;
-            SaveSettings();
+            await SaveSettings();
         }
     }
 
     [RelayCommand]
-    private void OnAlwaysAskWhereSave() => SaveSettings();
+    private async Task OnAlwaysAskWhereSave() => await SaveSettings();
 
-    private void SaveSettings()
+    private async Task SaveSettings()
     {
-        var newSettings = new AppSettings(
-            Theme: SelectedThemeOption,
-            DefaultDownloadsPath: DefaultDownloadsPath,
-            AlwaysAskWhereSave: IsAlwaysAskWhereSaveOn
-        );
+        _settingsService.Set(s => s.Theme, SelectedThemeOption);
+        _settingsService.Set(s => s.DefaultDownloadsPath, DefaultDownloadsPath);
+        _settingsService.Set(s => s.AlwaysAskWhereSave, IsAlwaysAskWhereSaveOn);
 
-        _settingsService.Save(newSettings);
-        _messenger.Send(new ChangeThemeRequestMessage(SelectedThemeOption));
+        await _settingsService.SaveAsync();
     }
 }
