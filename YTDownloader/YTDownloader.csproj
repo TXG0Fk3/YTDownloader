@@ -72,9 +72,9 @@
       Include="CommunityToolkit.WinUI.Controls.SettingsControls"
       Version="8.2.251219"
     />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.7" />
-    <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.0.250930001-experimental1" />
-    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.28000.1721" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.9" />
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.2.0" />
+    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.28000.2270" />
     <PackageReference Include="YoutubeExplode" Version="6.6.0" />
     <Manifest Include="$(ApplicationManifest)" />
   </ItemGroup>
