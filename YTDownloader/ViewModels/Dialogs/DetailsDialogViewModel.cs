@@ -52,11 +52,10 @@ public partial class DetailsDialogViewModel : ObservableObject
     public partial string SizeMB { get; set; } = string.Empty;
 
     [ObservableProperty]
-    public partial IReadOnlyList<MediaFormat> AvailableFormats { get; set; } =
-    [MediaFormat.Mp4, MediaFormat.Mp3];
+    public partial MediaFormat[] AvailableFormats { get; set; } = Enum.GetValues<MediaFormat>();
 
     [ObservableProperty]
-    public partial IReadOnlySet<string> AvailableQualities { get; set; } = new HashSet<string>();
+    public partial HashSet<string> AvailableQualities { get; set; } = new();
 
     [ObservableProperty, NotifyPropertyChangedFor(nameof(IsQualitySelectionEnabled))]
     public partial MediaFormat? SelectedFormat { get; set; }
@@ -110,8 +109,11 @@ public partial class DetailsDialogViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private async Task OnDownloadAsync()
+    private async Task DownloadAsync()
     {
+        if (SelectedQuality == null)
+            return;
+
         IDownloadable? downloadable = null;
 
         var outputDirectory = await GetFolderPathAsync();
@@ -128,12 +130,21 @@ public partial class DetailsDialogViewModel : ObservableObject
                 .FromVideoInfo(_video)
                 .WithOutputPath(Path.Combine(outputDirectory, fileName));
 
-            downloadable =
-                SelectedFormat == MediaFormat.Mp4
-                    ? builder
-                        .AsVideo(SelectedQuality, _videoStreamOption, _audioStreamOption)
-                        .Build()
-                    : builder.AsAudio(_audioStreamOption).Build();
+            if (_audioStreamOption == null)
+                return;
+
+            if (SelectedFormat == MediaFormat.Mp4)
+            {
+                if (_videoStreamOption == null)
+                    return;
+                builder.AsVideo(SelectedQuality, _videoStreamOption, _audioStreamOption);
+            }
+            else
+            {
+                builder.AsAudio(_audioStreamOption);
+            }
+
+            downloadable = builder.Build();
         }
         else if (IsPlaylist && _playlist != null)
         {
@@ -152,12 +163,12 @@ public partial class DetailsDialogViewModel : ObservableObject
     }
 
     private bool CanLoadContentInfo() =>
-        Uri.IsWellFormedUriString(UrlBoxText, UriKind.RelativeOrAbsolute)
+        Uri.IsWellFormedUriString(UrlBoxText, UriKind.Absolute)
         && (
             UrlBoxText.Contains("youtube.com/watch?v=")
             || UrlBoxText.Contains("youtube.com/playlist?list=")
         )
-        && (UrlBoxText != ContentUrl);
+        && (!IsContentLoaded || UrlBoxText != ContentUrl);
 
     [RelayCommand(CanExecute = nameof(CanLoadContentInfo))]
     private async Task LoadContentInfo()
@@ -165,7 +176,7 @@ public partial class DetailsDialogViewModel : ObservableObject
         _cts?.Cancel();
         _cts?.Dispose();
         _cts = new CancellationTokenSource();
-        var token = _cts.Token;
+        var ct = _cts.Token;
 
         ResetState();
         IsContentLoading = true;
@@ -173,11 +184,11 @@ public partial class DetailsDialogViewModel : ObservableObject
         try
         {
             if (UrlBoxText.Contains("playlist?list="))
-                await LoadPlaylistInfoAsync(token);
+                await LoadPlaylistInfoAsync(ct);
             else
-                await LoadVideoInfoAsync(token);
+                await LoadVideoInfoAsync(ct);
 
-            token.ThrowIfCancellationRequested();
+            ct.ThrowIfCancellationRequested();
 
             UpdateAvailableQualities();
             IsContentLoaded = true;
@@ -190,8 +201,7 @@ public partial class DetailsDialogViewModel : ObservableObject
         }
         finally
         {
-            if (!token.IsCancellationRequested)
-                IsContentLoading = false;
+            IsContentLoading = false;
         }
     }
 
@@ -208,20 +218,20 @@ public partial class DetailsDialogViewModel : ObservableObject
         ContentUrl = UrlBoxText;
     }
 
-    private async Task LoadVideoInfoAsync(CancellationToken token)
+    private async Task LoadVideoInfoAsync(CancellationToken ct)
     {
         IsPlaylist = false;
-        _video = await _youtubeService.GetVideoAsync(UrlBoxText, token);
+        _video = await _youtubeService.GetVideoAsync(UrlBoxText, ct);
 
         Title = _video.Title;
         ThumbnailUrl = _video.ThumbnailUrl;
         DefaultFileName = FileHelper.SanitizeFileName(_video.Title);
     }
 
-    private async Task LoadPlaylistInfoAsync(CancellationToken token)
+    private async Task LoadPlaylistInfoAsync(CancellationToken ct)
     {
         IsPlaylist = true;
-        _playlist = await _youtubeService.GetPlaylistAsync(UrlBoxText, token);
+        _playlist = await _youtubeService.GetPlaylistAsync(UrlBoxText, ct);
 
         Title = _playlist.Title;
         DefaultFileName = "Custom File Name not available for Playlists.";
@@ -231,19 +241,16 @@ public partial class DetailsDialogViewModel : ObservableObject
     {
         if (SelectedFormat == MediaFormat.Mp4)
         {
-            if (IsPlaylist && _playlist != null)
+            if (!IsPlaylist && _video != null)
             {
-                AvailableQualities = _playlist.Qualities;
+                AvailableQualities = _video
+                    .Streams.Where(s => s.Format == MediaFormat.Mp4)
+                    .Select(s => s.Quality)
+                    .ToHashSet();
             }
-            else
+            else if (IsPlaylist && _playlist != null)
             {
-                if (_video != null)
-                {
-                    AvailableQualities = _video
-                        .Streams.Where(s => s.Format == MediaFormat.Mp4)
-                        .Select(s => s.Quality)
-                        .ToHashSet();
-                }
+                AvailableQualities = _playlist.Qualities.ToHashSet();
             }
         }
         else
@@ -295,9 +302,7 @@ public partial class DetailsDialogViewModel : ObservableObject
                     s.Quality == value && s.Format == MediaFormat.Mp4
                 );
 
-            _audioStreamOption = _audioStreamOption = _video.Streams.FirstOrDefault(s =>
-                s.Format == MediaFormat.Mp3
-            );
+            _audioStreamOption = _video.Streams.FirstOrDefault(s => s.Format == MediaFormat.Mp3);
         }
 
         UpdateSize();
