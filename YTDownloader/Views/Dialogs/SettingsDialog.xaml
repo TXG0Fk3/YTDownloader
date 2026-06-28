@@ -45,6 +45,23 @@
                     </toolkit:SettingsExpander.Items>
                 </toolkit:SettingsExpander>
 
+                <!--  Performance Section  -->
+                <TextBlock Style="{StaticResource SettingsSectionHeaderTextBlockStyle}">
+                    <Span><Bold>Performance</Bold></Span>
+                </TextBlock>
+                <toolkit:SettingsCard Description="Limit how many videos can be downloaded at the same time. Needs restart to take effect." Header="Max Concurrent Downloads" HeaderIcon="{ui:FontIcon Glyph=&#xE896;}">
+                    <NumberBox Maximum="{x:Bind ViewModel.MaxConcurrentDownloadsMaximum}"
+                               Minimum="1"
+                               SpinButtonPlacementMode="Inline"
+                               Value="{x:Bind ViewModel.MaxConcurrentDownloads, Mode=TwoWay}" />
+                </toolkit:SettingsCard>
+                <toolkit:SettingsCard Description="Maximum parallel requests when loading a playlist. Higher values may be faster but can cause throttling or IP ban" Header="Max Concurrent Playlist Info Fetches" HeaderIcon="{ui:FontIcon Glyph=&#xE8B1;}">
+                    <NumberBox Maximum="{x:Bind ViewModel.MaxConcurrentPlaylistFetchesMaximum}"
+                               Minimum="1"
+                               SpinButtonPlacementMode="Inline"
+                               Value="{x:Bind ViewModel.MaxConcurrentPlaylistFetches, Mode=TwoWay}" />
+                </toolkit:SettingsCard>
+
                 <!--  Files Section  -->
                 <TextBlock Style="{StaticResource SettingsSectionHeaderTextBlockStyle}">
                     <Span><Bold>Files</Bold></Span>

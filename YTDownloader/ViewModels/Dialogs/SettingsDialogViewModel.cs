@@ -26,6 +26,15 @@ public partial class SettingsDialogViewModel : ObservableObject
     [ObservableProperty]
     public partial ThemeMode SelectedThemeMode { get; set; }
 
+    public readonly int MaxConcurrentDownloadsMaximum = 6;
+    public readonly int MaxConcurrentPlaylistFetchesMaximum = 16;
+
+    [ObservableProperty]
+    public partial int MaxConcurrentPlaylistFetches { get; set; }
+
+    [ObservableProperty]
+    public partial int MaxConcurrentDownloads { get; set; }
+
     [ObservableProperty]
     public partial string? DefaultDownloadsPath { get; set; }
 
@@ -43,6 +52,10 @@ public partial class SettingsDialogViewModel : ObservableObject
     private async Task LoadSettingsAsync()
     {
         SelectedThemeMode = _settingsService.Current.Theme;
+        MaxConcurrentPlaylistFetches = _settingsService
+            .Current
+            .MaxConcurrentPlaylistVideoInfoFetches;
+        MaxConcurrentDownloads = _settingsService.Current.MaxConcurrentDownloads;
         DefaultDownloadsPath = _settingsService.Current.DefaultDownloadsPath;
         AlwaysAskWhereSave = _settingsService.Current.AlwaysAskWhereSave;
 
@@ -65,6 +78,12 @@ public partial class SettingsDialogViewModel : ObservableObject
     }
 
     partial void OnSelectedThemeModeChanged(ThemeMode value) => ApplySetting(s => s.Theme, value);
+
+    partial void OnMaxConcurrentPlaylistFetchesChanged(int value) =>
+        ApplySetting(s => s.MaxConcurrentPlaylistVideoInfoFetches, value);
+
+    partial void OnMaxConcurrentDownloadsChanged(int value) =>
+        ApplySetting(s => s.MaxConcurrentDownloads, value);
 
     partial void OnDefaultDownloadsPathChanged(string? value) =>
         ApplySetting(s => s.DefaultDownloadsPath, value);
