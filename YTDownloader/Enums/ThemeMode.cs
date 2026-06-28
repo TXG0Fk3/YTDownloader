@@ -1,6 +1,6 @@
 namespace YTDownloader.Enums;
 
-public enum ThemeOption
+public enum ThemeMode
 {
     Light,
     Dark,
