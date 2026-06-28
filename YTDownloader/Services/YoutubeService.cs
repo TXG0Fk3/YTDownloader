@@ -15,11 +15,17 @@ namespace YTDownloader.Services;
 public class YoutubeService
 {
     private readonly YoutubeClient _youtubeClient = new();
+    private readonly SettingsService _settingsService;
 
-    public async Task<VideoInfo> GetVideoAsync(string videoUrl, CancellationToken token)
+    public YoutubeService(SettingsService settingsService)
     {
-        var video = await _youtubeClient.Videos.GetAsync(videoUrl, token);
-        var streamManifest = await GetStreamManifestAsync(video.Id, token);
+        _settingsService = settingsService;
+    }
+
+    public async Task<VideoInfo> GetVideoAsync(string videoUrl, CancellationToken ct)
+    {
+        var video = await _youtubeClient.Videos.GetAsync(videoUrl, ct);
+        var streamManifest = await GetStreamManifestAsync(video.Id, ct);
 
         var streamOptions = streamManifest
             .GetVideoOnlyStreams()
@@ -57,9 +63,9 @@ public class YoutubeService
         };
     }
 
-    public async Task<PlaylistInfo> GetPlaylistAsync(string playlistUrl, CancellationToken token)
+    public async Task<PlaylistInfo> GetPlaylistAsync(string playlistUrl, CancellationToken ct)
     {
-        var playlist = await _youtubeClient.Playlists.GetAsync(playlistUrl, token);
+        var playlist = await _youtubeClient.Playlists.GetAsync(playlistUrl, ct);
 
         return new PlaylistInfo
         {
@@ -72,18 +78,20 @@ public class YoutubeService
 
     public async Task<IReadOnlyList<VideoInfo>> GetPlaylistVideosAsync(
         string playlistId,
-        CancellationToken token
+        CancellationToken ct
     )
     {
-        var semaphore = new SemaphoreSlim(12);
+        using var semaphore = new SemaphoreSlim(
+            _settingsService.Current.MaxConcurrentPlaylistVideoInfoFetches
+        );
 
         return await Task.WhenAll(
-            (await _youtubeClient.Playlists.GetVideosAsync(playlistId, token)).Select(async v =>
+            (await _youtubeClient.Playlists.GetVideosAsync(playlistId, ct)).Select(async v =>
             {
-                await semaphore.WaitAsync(token);
+                await semaphore.WaitAsync(ct);
                 try
                 {
-                    return await GetVideoAsync(v.Url, token);
+                    return await GetVideoAsync(v.Url, ct);
                 }
                 finally
                 {
@@ -93,7 +101,7 @@ public class YoutubeService
         );
     }
 
-    public StreamOption? GetClosestMp4StreamOption(
+    public StreamOption? GetClosestVideoStreamOption(
         IEnumerable<StreamOption> streams,
         string quality
     )
@@ -107,7 +115,7 @@ public class YoutubeService
             .FirstOrDefault();
     }
 
-    public StreamOption? GetBestMp3StreamOption(IEnumerable<StreamOption> streams) =>
+    public StreamOption? GetBestAudioStreamOption(IEnumerable<StreamOption> streams) =>
         streams.FirstOrDefault(s => s.Format == MediaFormat.Mp3);
 
     public async Task<(string VideoPath, string AudioPath)> DownloadVideoAsync(
@@ -115,7 +123,7 @@ public class YoutubeService
         StreamOption videoStreamOption,
         string outputDirectory,
         IProgress<double> progress,
-        CancellationToken token
+        CancellationToken ct
     )
     {
         var videoStreamInfo =
@@ -127,11 +135,11 @@ public class YoutubeService
 
         string videoPath = Path.Combine(
             outputDirectory,
-            $"temp_v_{Guid.NewGuid().ToString().Substring(0, 8)}.{videoStreamInfo.Container.Name}"
+            $"temp_v_{Guid.NewGuid().ToString().Substring(0, 12)}.{videoStreamInfo.Container.Name}"
         );
         string audioPath = Path.Combine(
             outputDirectory,
-            $"temp_a_{Guid.NewGuid().ToString().Substring(0, 8)}.{audioStreamInfo.Container.Name}"
+            $"temp_a_{Guid.NewGuid().ToString().Substring(0, 12)}.{audioStreamInfo.Container.Name}"
         );
 
         double videoSize = videoStreamInfo.Size.Bytes;
@@ -149,7 +157,7 @@ public class YoutubeService
             videoStreamInfo,
             videoPath,
             vProgress,
-            token
+            ct
         );
 
         var aProgress = new Progress<double>(p => ReportProgress(p * audioSize, videoSize));
@@ -157,7 +165,7 @@ public class YoutubeService
             audioStreamInfo,
             audioPath,
             aProgress,
-            token
+            ct
         );
 
         return (videoPath, audioPath);
@@ -167,7 +175,7 @@ public class YoutubeService
         StreamManifest streamManifest,
         string outputDirectory,
         IProgress<double> progress,
-        CancellationToken token
+        CancellationToken ct
     )
     {
         var audioStreamInfo =
@@ -176,22 +184,17 @@ public class YoutubeService
 
         string audioPath = Path.Combine(
             outputDirectory,
-            $"temp_a_{Guid.NewGuid().ToString().Substring(0, 8)}.{audioStreamInfo.Container.Name}"
+            $"temp_a_{Guid.NewGuid().ToString().Substring(0, 12)}.{audioStreamInfo.Container.Name}"
         );
 
-        await _youtubeClient.Videos.Streams.DownloadAsync(
-            audioStreamInfo,
-            audioPath,
-            progress,
-            token
-        );
+        await _youtubeClient.Videos.Streams.DownloadAsync(audioStreamInfo, audioPath, progress, ct);
         return audioPath;
     }
 
     private async Task<StreamManifest> GetStreamManifestAsync(
         string videoId,
-        CancellationToken token
-    ) => await _youtubeClient.Videos.Streams.GetManifestAsync(videoId, token);
+        CancellationToken ct
+    ) => await _youtubeClient.Videos.Streams.GetManifestAsync(videoId, ct);
 
     private VideoOnlyStreamInfo? GetVideoOnlyStreamInfo(
         StreamManifest streamManifest,
@@ -202,13 +205,18 @@ public class YoutubeService
             .FirstOrDefault(s => s.Container == Container.Mp4 && s.VideoQuality.Label == quality);
 
     private AudioOnlyStreamInfo? GetBestAudioOnlyStreamInfo(StreamManifest streamManifest) =>
-        streamManifest.GetAudioOnlyStreams().GetWithHighestBitrate() as AudioOnlyStreamInfo;
+        streamManifest.GetAudioOnlyStreams().GetWithHighestBitrate() is AudioOnlyStreamInfo audio
+            ? audio
+            : null;
 
     private AudioOnlyStreamInfo? GetBestAudioOnlyMp4StreamInfo(StreamManifest streamManifest) =>
         streamManifest
             .GetAudioOnlyStreams()
             .Where(s => s.Container == Container.Mp4)
-            .GetWithHighestBitrate() as AudioOnlyStreamInfo;
+            .GetWithHighestBitrate()
+            is AudioOnlyStreamInfo audio
+            ? audio
+            : null;
 
     private static int Score(StreamOption stream, int targetResolution, int targetFps)
     {
