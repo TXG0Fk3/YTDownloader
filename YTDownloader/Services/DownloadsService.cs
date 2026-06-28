@@ -161,7 +161,7 @@ public class DownloadsService
         }
     }
 
-    private static async Task RunFFmpegAsync(string arguments, CancellationToken token)
+    private static async Task RunFFmpegAsync(string arguments, CancellationToken ct)
     {
         var ffmpegPath = FFmpegLocator.GetFFmpegPath();
 
@@ -179,7 +179,7 @@ public class DownloadsService
 
         var errorReadTask = process.StandardError.ReadToEndAsync();
 
-        using var registration = token.Register(() =>
+        using var registration = ct.Register(() =>
         {
             try
             {
@@ -189,7 +189,7 @@ public class DownloadsService
             catch { }
         });
 
-        await process.WaitForExitAsync(token);
+        await process.WaitForExitAsync(ct);
         var fullLog = await errorReadTask;
 
         if (process.ExitCode != 0)
