@@ -18,10 +18,10 @@ public class DownloadsService
 
     private readonly Channel<DownloadItem> _downloadQueue;
 
-    public DownloadsService(YoutubeService youtubeService, int maxParallelDownloads = 3)
+    public DownloadsService(YoutubeService youtubeService, SettingsService settingsService)
     {
         _youtubeService = youtubeService;
-        _semaphore = new SemaphoreSlim(maxParallelDownloads);
+        _semaphore = new SemaphoreSlim(settingsService.Current.MaxConcurrentDownloads);
 
         _downloadQueue = Channel.CreateUnbounded<DownloadItem>();
         _ = ConsumeQueueAsync();
@@ -43,12 +43,13 @@ public class DownloadsService
                 group.Id,
                 group.CTS.Token
             );
-            group.CTS.Token.ThrowIfCancellationRequested();
-
             FileHelper.CreateFolder(group.OutputPath);
 
             foreach (var videoInfo in groupVideoInfos)
             {
+                if (group.CTS.Token.IsCancellationRequested)
+                    return;
+
                 var builder = new DownloadItemBuilder()
                     .FromVideoInfo(videoInfo)
                     .WithOutputPath(
@@ -56,21 +57,27 @@ public class DownloadsService
                     )
                     .WithGroupCancellation(group.CTS.Token);
 
-                var item =
-                    group.Type == DownloadType.Video
-                        ? builder
-                            .AsVideo(
-                                group.Quality,
-                                _youtubeService.GetClosestMp4StreamOption(
-                                    videoInfo.Streams,
-                                    group.Quality
-                                ),
-                                _youtubeService.GetBestMp3StreamOption(videoInfo.Streams)
-                            )
-                            .Build()
-                        : builder
-                            .AsAudio(_youtubeService.GetBestMp3StreamOption(videoInfo.Streams))
-                            .Build();
+                var bestAudio = _youtubeService.GetBestAudioStreamOption(videoInfo.Streams);
+                if (bestAudio == null)
+                    continue;
+
+                if (group.Type == DownloadType.Video)
+                {
+                    var closestVideo = _youtubeService.GetClosestVideoStreamOption(
+                        videoInfo.Streams,
+                        group.Quality
+                    );
+                    if (closestVideo == null)
+                        continue;
+
+                    builder.AsVideo(group.Quality, closestVideo, bestAudio);
+                }
+                else
+                {
+                    builder.AsAudio(bestAudio);
+                }
+
+                var item = builder.Build();
 
                 group.Items.Add(item);
                 await _downloadQueue.Writer.WriteAsync(item);
@@ -85,29 +92,33 @@ public class DownloadsService
     private async Task ConsumeQueueAsync()
     {
         await foreach (var item in _downloadQueue.Reader.ReadAllAsync())
+        {
+            if (item.Status == DownloadStatus.Cancelled)
+                continue;
+
             _ = DownloadAsync(item);
+        }
     }
 
     private async Task DownloadAsync(DownloadItem item)
     {
         await _semaphore.WaitAsync();
 
-        string tempVideo = null;
-        string tempAudio = null;
+        string tempVideo = string.Empty;
+        string tempAudio = string.Empty;
 
         string tempDirectory = Path.GetTempPath();
-        string ffmpegArgs = string.Empty;
+        string ffmpegArgs;
 
         try
         {
-            item.CTS.Token.ThrowIfCancellationRequested();
             item.MarkAsDownloading();
 
             if (item.Type == DownloadType.Video)
             {
                 (tempVideo, tempAudio) = await _youtubeService.DownloadVideoAsync(
                     item.Manifest,
-                    item.VideoStreamOption,
+                    item.VideoStreamOption!,
                     tempDirectory,
                     item.ProgressReporter,
                     item.CTS.Token
@@ -129,7 +140,7 @@ public class DownloadsService
             }
 
             item.MarkAsConverting();
-            await RunFFmpegCommandAsync(ffmpegArgs, item.CTS.Token);
+            await RunFFmpegAsync(ffmpegArgs, item.CTS.Token);
 
             item.MarkAsCompleted();
         }
@@ -150,7 +161,7 @@ public class DownloadsService
         }
     }
 
-    private async Task RunFFmpegCommandAsync(string arguments, CancellationToken token)
+    private static async Task RunFFmpegAsync(string arguments, CancellationToken token)
     {
         var ffmpegPath = FFmpegLocator.GetFFmpegPath();
 
