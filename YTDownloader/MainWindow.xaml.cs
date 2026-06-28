@@ -69,7 +69,7 @@ public sealed partial class MainWindow : Window
     public void NavigateToShell()
     {
         SystemBackdrop = new MicaBackdrop();
-        _rootFrame.Navigate(typeof(MainPage), null, new DrillInNavigationTransitionInfo());
+        _rootFrame.Navigate(typeof(ShellPage), null, new DrillInNavigationTransitionInfo());
     }
 
     private void SetTheme(ThemeMode themeMode)

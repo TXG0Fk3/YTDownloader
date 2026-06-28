@@ -10,7 +10,7 @@ using YTDownloader.ViewModels.Components;
 
 namespace YTDownloader.ViewModels;
 
-public partial class MainPageViewModel
+public partial class ShellPageViewModel
     : ObservableObject,
         IRecipient<DownloadRequestMessage>,
         IRecipient<RetryDownloadRequestMessage>,
@@ -25,7 +25,7 @@ public partial class MainPageViewModel
 
     public bool IsDownloadItemsEmpty => Downloads.Count == 0;
 
-    public MainPageViewModel(
+    public ShellPageViewModel(
         DownloadsService downloadsService,
         DialogService dialogService,
         IMessenger messenger

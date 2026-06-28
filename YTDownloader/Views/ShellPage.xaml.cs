@@ -4,15 +4,15 @@ using YTDownloader.ViewModels;
 
 namespace YTDownloader.Views;
 
-public sealed partial class MainPage : Page
+public sealed partial class ShellPage : Page
 {
-    public MainPageViewModel ViewModel { get; set; }
+    public ShellPageViewModel ViewModel { get; set; }
 
-    public MainPage()
+    public ShellPage()
     {
         InitializeComponent();
 
-        ViewModel = App.GetService<MainPageViewModel>();
+        ViewModel = App.GetService<ShellPageViewModel>();
         DataContext = ViewModel;
         Loaded += (_, __) => App.GetService<DialogService>().Initialize(XamlRoot);
     }

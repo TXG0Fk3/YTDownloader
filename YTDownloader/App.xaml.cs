@@ -25,7 +25,7 @@ public partial class App : Application
         InitializeComponent();
 
         var services = new ServiceCollection();
-        services.AddTransient<MainPageViewModel>();
+        services.AddTransient<ShellPageViewModel>();
         services.AddTransient<DetailsDialogViewModel>();
         services.AddTransient<SettingsDialogViewModel>();
 
