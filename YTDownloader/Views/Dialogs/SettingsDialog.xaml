@@ -36,14 +36,13 @@
                     </Span>
                 </TextBlock>
                 <toolkit:SettingsExpander Grid.Row="1"
-                                          Width="330"
                                           HorizontalAlignment="Stretch"
                                           Description="Select the application theme"
                                           Header="Application Theme"
                                           HeaderIcon="{ui:FontIcon Glyph=}">
                     <toolkit:SettingsExpander.Items>
                         <toolkit:SettingsCard>
-                            <RadioButtons ItemsSource="{x:Bind ViewModel.ThemeOptions, Mode=OneWay}" SelectedItem="{Binding SelectedThemeOption, Mode=TwoWay}" SelectionChanged="RadioButtons_SelectionChanged" />
+                            <RadioButtons ItemsSource="{x:Bind ViewModel.ThemeOptions, Mode=OneWay}" SelectedItem="{Binding SelectedThemeMode, Mode=TwoWay}" SelectionChanged="RadioButtons_SelectionChanged" />
                         </toolkit:SettingsCard>
                     </toolkit:SettingsExpander.Items>
                 </toolkit:SettingsExpander>
@@ -55,7 +54,6 @@
                     </Span>
                 </TextBlock>
                 <toolkit:SettingsExpander Grid.Row="3"
-                                          Width="330"
                                           HorizontalAlignment="Stretch"
                                           HorizontalContentAlignment="Stretch"
                                           Description="Manage your downloads"
@@ -68,10 +66,9 @@
                         <toolkit:SettingsCard Description="The program will always ask where to save the downloaded files" Header="Always ask where to save files">
                             <ToggleSwitch Grid.Row="1"
                                           Grid.Column="1"
-                                          IsOn="{Binding IsAlwaysAskWhereSaveOn, Mode=TwoWay}"
+                                          IsOn="{x:Bind ViewModel.AlwaysAskWhereSave, Mode=TwoWay}"
                                           OffContent="Off"
-                                          OnContent="On"
-                                          Toggled="ToggleSwitch_Toggled" />
+                                          OnContent="On" />
                         </toolkit:SettingsCard>
                     </toolkit:SettingsExpander.Items>
                 </toolkit:SettingsExpander>
@@ -83,7 +80,6 @@
                     </Span>
                 </TextBlock>
                 <toolkit:SettingsExpander Grid.Row="3"
-                                          Width="330"
                                           HorizontalAlignment="Stretch"
                                           HorizontalContentAlignment="Stretch"
                                           Description="© 2026 TXG0Fk3. All rights reserved."

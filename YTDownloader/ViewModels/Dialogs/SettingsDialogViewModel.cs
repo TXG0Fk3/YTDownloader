@@ -1,10 +1,12 @@
+using System;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using CommunityToolkit.Mvvm.Messaging;
 using YTDownloader.Enums;
 using YTDownloader.Helpers;
+using YTDownloader.Models.Settings;
 using YTDownloader.Services;
 
 namespace YTDownloader.ViewModels.Dialogs;
@@ -13,7 +15,8 @@ public partial class SettingsDialogViewModel : ObservableObject
 {
     private readonly SettingsService _settingsService;
     private readonly DialogService _dialogService;
-    private readonly IMessenger _messenger;
+
+    private bool _isInitializing = true;
 
     public string YTDownloaderVersion { get; } = AppInfoHelper.Version;
 
@@ -21,52 +24,51 @@ public partial class SettingsDialogViewModel : ObservableObject
         new List<ThemeMode>() { ThemeMode.Light, ThemeMode.Dark, ThemeMode.System };
 
     [ObservableProperty]
-    public partial ThemeMode SelectedThemeOption { get; set; }
+    public partial ThemeMode SelectedThemeMode { get; set; }
 
     [ObservableProperty]
-    public partial string DefaultDownloadsPath { get; set; }
+    public partial string? DefaultDownloadsPath { get; set; }
 
     [ObservableProperty]
-    public partial bool IsAlwaysAskWhereSaveOn { get; set; }
+    public partial bool AlwaysAskWhereSave { get; set; }
 
-    public SettingsDialogViewModel(
-        SettingsService settingsService,
-        DialogService dialogService,
-        IMessenger messenger
-    )
+    public SettingsDialogViewModel(SettingsService settingsService, DialogService dialogService)
     {
         _settingsService = settingsService;
         _dialogService = dialogService;
-        _messenger = messenger;
 
-        SelectedThemeOption = _settingsService.Current.Theme;
+        _ = LoadSettingsAsync();
+    }
+
+    private async Task LoadSettingsAsync()
+    {
+        SelectedThemeMode = _settingsService.Current.Theme;
         DefaultDownloadsPath = _settingsService.Current.DefaultDownloadsPath;
-        IsAlwaysAskWhereSaveOn = _settingsService.Current.AlwaysAskWhereSave;
+        AlwaysAskWhereSave = _settingsService.Current.AlwaysAskWhereSave;
+
+        _isInitializing = false;
     }
 
     [RelayCommand]
-    private async Task OnSelectTheme() => await SaveSettings();
-
-    [RelayCommand]
-    private async Task OnSelectDefaultDownloadsFolder()
+    private async Task SelectDefaultDownloadsFolder()
     {
         var path = await _dialogService.OpenFolderPickerAsync();
         if (!string.IsNullOrEmpty(path))
-        {
             DefaultDownloadsPath = path;
-            await SaveSettings();
-        }
     }
 
-    [RelayCommand]
-    private async Task OnAlwaysAskWhereSave() => await SaveSettings();
-
-    private async Task SaveSettings()
+    private void ApplySetting<T>(Expression<Func<AppSettings, T>> selector, T value)
     {
-        _settingsService.Set(s => s.Theme, SelectedThemeOption);
-        _settingsService.Set(s => s.DefaultDownloadsPath, DefaultDownloadsPath);
-        _settingsService.Set(s => s.AlwaysAskWhereSave, IsAlwaysAskWhereSaveOn);
-
-        await _settingsService.SaveAsync();
+        if (_isInitializing)
+            return;
+        _settingsService.Set(selector, value);
     }
+
+    partial void OnSelectedThemeModeChanged(ThemeMode value) => ApplySetting(s => s.Theme, value);
+
+    partial void OnDefaultDownloadsPathChanged(string? value) =>
+        ApplySetting(s => s.DefaultDownloadsPath, value);
+
+    partial void OnAlwaysAskWhereSaveChanged(bool value) =>
+        ApplySetting(s => s.AlwaysAskWhereSave, value);
 }
