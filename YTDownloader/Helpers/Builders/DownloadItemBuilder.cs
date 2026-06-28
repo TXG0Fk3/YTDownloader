@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Threading;
 using YTDownloader.Enums;
@@ -8,23 +9,29 @@ namespace YTDownloader.Helpers.Builders;
 
 public class DownloadItemBuilder
 {
-    private readonly DownloadItem _item = new();
+    private VideoInfo? _info;
+    private string? _outputPath;
+    private DownloadType _type;
+    private string? _quality;
+    private StreamOption? _videoStream;
+    private StreamOption? _audioStream;
+    private CancellationTokenSource? _cts;
 
-    public DownloadItemBuilder FromVideoInfo(VideoInfo video)
+    public DownloadItemBuilder FromVideoInfo(VideoInfo videoInfo)
     {
-        _item.Id = video.Id;
-        _item.Url = video.Url;
-        _item.Title = video.Title;
-        _item.Author = video.Author;
-        _item.ThumbnailUrl = video.ThumbnailUrl;
-        _item.Manifest = video.Manifest;
-        _item.CTS = new();
+        if (videoInfo.Manifest == null)
+            throw new ArgumentException(
+                "The provided VideoInfo has a null StreamManifest.",
+                nameof(videoInfo)
+            );
+
+        _info = videoInfo;
         return this;
     }
 
     public DownloadItemBuilder WithOutputPath(string path)
     {
-        _item.OutputPath = path;
+        _outputPath = path;
         return this;
     }
 
@@ -34,28 +41,77 @@ public class DownloadItemBuilder
         StreamOption audioStream
     )
     {
-        _item.Type = DownloadType.Video;
-        _item.Quality = quality;
-        _item.VideoStreamOption = videoStream;
-        _item.AudioStreamOption = audioStream;
-        _item.OutputPath = Path.ChangeExtension(_item.OutputPath, "mp4");
+        _type = DownloadType.Video;
+        _quality = quality;
+        _videoStream = videoStream;
+        _audioStream = audioStream;
+
         return this;
     }
 
     public DownloadItemBuilder AsAudio(StreamOption audioStream)
     {
-        _item.Type = DownloadType.Audio;
-        _item.Quality = "Best";
-        _item.AudioStreamOption = audioStream;
-        _item.OutputPath = Path.ChangeExtension(_item.OutputPath, "mp3");
+        _type = DownloadType.Audio;
+        _quality = "Best";
+        _audioStream = audioStream;
+
         return this;
     }
 
     public DownloadItemBuilder WithGroupCancellation(CancellationToken groupToken)
     {
-        _item.CTS = CancellationTokenSource.CreateLinkedTokenSource(groupToken);
+        _cts = CancellationTokenSource.CreateLinkedTokenSource(groupToken);
         return this;
     }
 
-    public DownloadItem Build() => _item;
+    public DownloadItem Build()
+    {
+        if (_info == null)
+            throw new InvalidOperationException(
+                "VideoInfo has not been provided. Call FromVideoInfo() before building."
+            );
+
+        if (string.IsNullOrWhiteSpace(_outputPath))
+            throw new InvalidOperationException(
+                "Output path has not been set. Call WithOutputPath() before building."
+            );
+
+        if (_type != DownloadType.Video && _type != DownloadType.Audio)
+            throw new InvalidOperationException(
+                "Download type has not been specified. Call AsVideo() or AsAudio() before building."
+            );
+
+        if (string.IsNullOrWhiteSpace(_quality))
+            throw new InvalidOperationException(
+                "Quality has not been set. Call AsVideo() or AsAudio() before building."
+            );
+
+        if (_audioStream == null)
+            throw new InvalidOperationException(
+                "Audio stream option has not been provided. Call AsVideo() or AsAudio() before building."
+            );
+
+        var item = new DownloadItem()
+        {
+            Id = _info.Id,
+            Url = _info.Url,
+            Title = _info.Title,
+            Author = _info.Author,
+            ThumbnailUrl = _info.ThumbnailUrl,
+            Type = _type,
+            Quality = _quality,
+            Manifest = _info.Manifest!,
+            VideoStreamOption = _videoStream,
+            AudioStreamOption = _audioStream,
+            OutputPath = Path.ChangeExtension(
+                _outputPath,
+                _type == DownloadType.Video ? "mp4" : "mp3"
+            ),
+        };
+
+        if (_cts != null)
+            item.CTS = _cts;
+
+        return item;
+    }
 }
