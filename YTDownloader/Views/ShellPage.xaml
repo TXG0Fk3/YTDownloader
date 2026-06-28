@@ -140,7 +140,7 @@
                     Height="37"
                     Padding="0"
                     HorizontalAlignment="Center"
-                    Command="{x:Bind ViewModel.HelpCommand}"
+                    Command="{x:Bind ViewModel.OpenHelpCommand}"
                     Content="{ui:FontIcon Glyph=&#xE897;}"
                     ToolTipService.ToolTip="Help" />
 
@@ -149,7 +149,7 @@
                     Height="37"
                     Padding="0"
                     HorizontalAlignment="Center"
-                    Command="{x:Bind ViewModel.SettingsCommand}"
+                    Command="{x:Bind ViewModel.OpenSettingsCommand}"
                     Content="{ui:FontIcon Glyph=&#xE713;}"
                     ToolTipService.ToolTip="Settings" />
         </Grid>

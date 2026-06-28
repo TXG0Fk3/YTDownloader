@@ -53,31 +53,31 @@ public partial class ShellPageViewModel
         _isInitializing = false;
     }
 
-    public void Receive(DownloadRequestMessage message) => OnEnqueueDownload(message.DownloadInfo);
+    public void Receive(DownloadRequestMessage message) => EnqueueDownload(message.DownloadInfo);
 
-    public void Receive(RetryDownloadRequestMessage message) => OnRetryDownload(message.Item);
+    public void Receive(RetryDownloadRequestMessage message) => RetryDownload(message.Item);
 
     public void Receive(RemoveDownloadRequestMessage message) =>
-        OnRemoveDownload(message.DownloadableViewModel);
+        RemoveDownload(message.DownloadableViewModel);
 
-    public void Receive(ErrorDialogRequestMessage message) => _ = OnError(message.ErrorMessage);
+    public void Receive(ErrorDialogRequestMessage message) => _ = OpenError(message.ErrorMessage);
 
     [RelayCommand]
     private void SetSortDirection(string value) => SortDirection = Enum.Parse<SortDirection>(value);
 
     [RelayCommand]
-    private async Task OnAddDownloadAsync() => await _dialogService.ShowDetailsDialogAsync();
+    private async Task AddDownloadAsync() => await _dialogService.ShowDetailsDialogAsync();
 
     [RelayCommand]
-    private async Task OnHelp() => await _dialogService.ShowHelpDialogAsync();
+    private async Task OpenHelp() => await _dialogService.ShowHelpDialogAsync();
 
     [RelayCommand]
-    private async Task OnSettings() => await _dialogService.ShowSettingsDialogAsync();
+    private async Task OpenSettings() => await _dialogService.ShowSettingsDialogAsync();
 
-    private async Task OnError(string errorMessage) =>
+    private async Task OpenError(string errorMessage) =>
         await _dialogService.ShowErrorDialogAsync(errorMessage);
 
-    private void OnEnqueueDownload(IDownloadable downloadable)
+    private void EnqueueDownload(IDownloadable downloadable)
     {
         IDownloadableViewModel vm = downloadable switch
         {
@@ -94,10 +94,10 @@ public partial class ShellPageViewModel
         _ = _downloadsService.EnqueueDownloadable(downloadable);
     }
 
-    private void OnRetryDownload(DownloadItem item) =>
+    private void RetryDownload(DownloadItem item) =>
         _ = _downloadsService.EnqueueDownloadable(item);
 
-    private void OnRemoveDownload(IDownloadableViewModel vm)
+    private void RemoveDownload(IDownloadableViewModel vm)
     {
         Downloads.Remove(vm);
         vm.Dispose();
