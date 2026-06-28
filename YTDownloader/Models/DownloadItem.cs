@@ -11,17 +11,17 @@ public partial class DownloadItem : ObservableObject, IDownloadable
 {
     private DateTime? _startTime;
 
-    public string Id { get; set; }
-    public string Url { get; set; }
-    public string Title { get; set; }
-    public string Author { get; set; }
-    public string ThumbnailUrl { get; set; }
-    public DownloadType Type { get; set; }
-    public string Quality { get; set; }
-    public StreamManifest Manifest { get; set; }
-    public StreamOption VideoStreamOption { get; set; }
-    public StreamOption AudioStreamOption { get; set; }
-    public string OutputPath { get; set; }
+    public required string Id { get; set; }
+    public required string Url { get; set; }
+    public required string Title { get; set; }
+    public required string Author { get; set; }
+    public required string ThumbnailUrl { get; set; }
+    public required DownloadType Type { get; set; }
+    public required string Quality { get; set; }
+    public required StreamManifest Manifest { get; set; }
+    public required StreamOption? VideoStreamOption { get; set; }
+    public required StreamOption AudioStreamOption { get; set; }
+    public required string OutputPath { get; set; }
 
     [ObservableProperty]
     public partial double Progress { get; set; } = 0.0;
@@ -35,11 +35,11 @@ public partial class DownloadItem : ObservableObject, IDownloadable
     public IProgress<double> ProgressReporter { get; }
     public CancellationTokenSource CTS { get; set; } = new();
 
-    public DownloadItem() => ProgressReporter = new Progress<double>(p => UpdateProgress(p));
+    internal DownloadItem() => ProgressReporter = new Progress<double>(UpdateProgress);
 
     public double FileSizeMB =>
         Type == DownloadType.Video
-            ? VideoStreamOption.SizeMB + AudioStreamOption.SizeMB
+            ? VideoStreamOption!.SizeMB + AudioStreamOption.SizeMB
             : AudioStreamOption.SizeMB;
 
     public TimeSpan RemainingTime

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using YoutubeExplode.Videos.Streams;
 
@@ -5,13 +6,13 @@ namespace YTDownloader.Models.Info;
 
 public class VideoInfo
 {
-    public string Id { get; init; }
-    public string Url { get; init; }
-    public string Title { get; init; }
-    public string Author { get; init; }
-    public string ThumbnailUrl { get; init; }
+    public required string Id { get; set; }
+    public required string Url { get; set; }
+    public required string Title { get; set; }
+    public required string Author { get; set; }
+    public required string ThumbnailUrl { get; set; }
 
-    public IReadOnlyList<StreamOption> Streams { get; init; }
+    public IReadOnlyList<StreamOption> Streams { get; set; } = Array.Empty<StreamOption>();
 
-    internal StreamManifest Manifest { get; init; }
+    internal StreamManifest? Manifest { get; set; }
 }

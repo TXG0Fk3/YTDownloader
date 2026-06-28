@@ -11,13 +11,13 @@ namespace YTDownloader.Models;
 
 public partial class DownloadGroup : ObservableObject, IDownloadable
 {
-    public string Id { get; set; }
-    public string Url { get; set; }
-    public string Title { get; set; }
-    public string Author { get; set; }
-    public DownloadType Type { get; set; }
-    public string Quality { get; set; }
-    public string OutputPath { get; set; }
+    public required string Id { get; set; }
+    public required string Url { get; set; }
+    public required string Title { get; set; }
+    public required string Author { get; set; }
+    public required DownloadType Type { get; set; }
+    public required string Quality { get; set; }
+    public required string OutputPath { get; set; }
     public ObservableCollection<DownloadItem> Items { get; } = new();
     public CancellationTokenSource CTS { get; private set; } = new();
 
@@ -30,7 +30,7 @@ public partial class DownloadGroup : ObservableObject, IDownloadable
     [ObservableProperty]
     public partial Exception? Error { get; set; }
 
-    public DownloadGroup() => Items.CollectionChanged += OnItemsChanged;
+    internal DownloadGroup() => Items.CollectionChanged += OnItemsChanged;
 
     private void OnItemsChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {

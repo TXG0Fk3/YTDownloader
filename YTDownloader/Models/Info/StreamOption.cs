@@ -4,7 +4,7 @@ namespace YTDownloader.Models.Info;
 
 public class StreamOption
 {
-    public string Quality { get; init; }
-    public MediaFormat Format { get; init; }
-    public double SizeMB { get; init; }
+    public required string Quality { get; set; }
+    public MediaFormat Format { get; set; }
+    public double SizeMB { get; set; }
 }

@@ -4,11 +4,10 @@ namespace YTDownloader.Models.Info;
 
 public class PlaylistInfo
 {
-    public string Id { get; init; }
-    public string Url { get; init; }
-    public string Title { get; init; }
-    public string Author { get; init; }
-    public string ThumbnailUrl { get; init; }
+    public required string Id { get; init; }
+    public required string Url { get; init; }
+    public required string Title { get; init; }
+    public required string Author { get; init; }
 
     public IReadOnlySet<string> Qualities { get; } =
         new HashSet<string>
