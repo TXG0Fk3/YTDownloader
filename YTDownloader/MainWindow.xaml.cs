@@ -39,7 +39,6 @@ public sealed partial class MainWindow : Window
         Title = WindowTitle;
         AppWindow.SetIcon(WindowIconPath);
         ExtendsContentIntoTitleBar = true;
-        AppWindow.TitleBar.PreferredHeightOption = TitleBarHeightOption.Tall;
 
         Content = _rootFrame;
         SetTheme(_settingsService.Current.Theme);
