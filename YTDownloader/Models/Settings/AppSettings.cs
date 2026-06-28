@@ -11,6 +11,7 @@ public class AppSettings
 
     public int MaxConcurrentPlaylistVideoInfoFetches { get; set; } = 8;
     public int MaxConcurrentDownloads { get; set; } = 2;
+    public SortDirection DownloadsSortDirection { get; set; } = SortDirection.Ascending;
 
     public string DefaultDownloadsPath { get; set; } =
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
