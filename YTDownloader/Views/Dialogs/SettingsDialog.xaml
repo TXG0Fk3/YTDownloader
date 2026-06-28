@@ -30,10 +30,8 @@
                 </StackPanel.ChildrenTransitions>
 
                 <!--  Appearance Section  -->
-                <TextBlock Style="{StaticResource SettingsSectionHeaderTextBlockStyle}">
-                    <Span>
-                        <Bold>Appearance</Bold>
-                    </Span>
+                <TextBlock Margin="1,0,0,6" Style="{StaticResource SettingsSectionHeaderTextBlockStyle}">
+                    <Span><Bold>Appearance</Bold></Span>
                 </TextBlock>
                 <toolkit:SettingsExpander Grid.Row="1"
                                           HorizontalAlignment="Stretch"
@@ -49,9 +47,7 @@
 
                 <!--  Files Section  -->
                 <TextBlock Style="{StaticResource SettingsSectionHeaderTextBlockStyle}">
-                    <Span>
-                        <Bold>Files</Bold>
-                    </Span>
+                    <Span><Bold>Files</Bold></Span>
                 </TextBlock>
                 <toolkit:SettingsExpander Grid.Row="3"
                                           HorizontalAlignment="Stretch"
@@ -75,9 +71,7 @@
 
                 <!--  About Section  -->
                 <TextBlock Style="{StaticResource SettingsSectionHeaderTextBlockStyle}">
-                    <Span>
-                        <Bold>About</Bold>
-                    </Span>
+                    <Span><Bold>About</Bold></Span>
                 </TextBlock>
                 <toolkit:SettingsExpander Grid.Row="3"
                                           HorizontalAlignment="Stretch"
