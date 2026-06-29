@@ -20,7 +20,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <VersionPrefix>2.5.2</VersionPrefix>
+    <VersionPrefix>2.6.0</VersionPrefix>
     <VersionSuffix></VersionSuffix>
     <Version>$(VersionPrefix)$([System.String]::Copy('-$(VersionSuffix)').TrimEnd('-'))</Version>
     <AssemblyVersion>$(VersionPrefix)</AssemblyVersion>
@@ -29,8 +29,8 @@
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <AssemblyTitle>YT Downloader</AssemblyTitle>
     <AssemblyProduct>YT Downloader</AssemblyProduct>
-    <Copyright>Copyright © TXG0Fk3. All rights reserved.</Copyright>
-    <AssemblyCopyright>Copyright © TXG0Fk3. All rights reserved.</AssemblyCopyright>
+    <Copyright>Copyright © TXG0Fk3. Licensed under GPL-3.0.</Copyright>
+    <AssemblyCopyright>Copyright © TXG0Fk3. Licensed under GPL-3.0.</AssemblyCopyright>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">
