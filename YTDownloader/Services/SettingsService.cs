@@ -61,6 +61,10 @@ public class SettingsService
 
         try
         {
+            var dir = Path.GetDirectoryName(_filePath);
+            if (!string.IsNullOrEmpty(dir))
+                Directory.CreateDirectory(dir);
+
             await File.WriteAllTextAsync(tmpPath, json);
             File.Move(tmpPath, _filePath, overwrite: true);
         }
