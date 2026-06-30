@@ -5,6 +5,8 @@
                xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
                xmlns:local="using:YTDownloader.Views.Dialogs"
                xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+               xmlns:toolkit="using:CommunityToolkit.WinUI.Controls"
+               xmlns:ui="using:CommunityToolkit.WinUI"
                CloseButtonText="Close"
                Style="{StaticResource DefaultContentDialogStyle}"
                mc:Ignorable="d">
@@ -15,44 +17,191 @@
         </StackPanel>
     </ContentDialog.Title>
 
+    <ContentDialog.Resources>
+        <x:Double x:Key="SettingsCardSpacing">4</x:Double>
+
+        <Style x:Key="SettingsSectionHeaderTextBlockStyle" BasedOn="{StaticResource BodyStrongTextBlockStyle}" TargetType="TextBlock">
+            <Style.Setters>
+                <Setter Property="Margin" Value="1,20,0,4" />
+            </Style.Setters>
+        </Style>
+    </ContentDialog.Resources>
+
     <ScrollViewer Height="430">
         <Grid Width="342">
-            <StackPanel>
-                <TextBlock TextWrapping="Wrap">
-                    <Bold>1-</Bold>
-                    <Run>Press Add Button</Run>
-                </TextBlock>
-                <Image Height="140" Margin="0,0,0,9" Source="/Assets/Help/One.png" />
+            <StackPanel HorizontalAlignment="Stretch" Spacing="{StaticResource SettingsCardSpacing}">
+                <StackPanel.ChildrenTransitions>
+                    <EntranceThemeTransition FromVerticalOffset="50" />
+                    <RepositionThemeTransition IsStaggeringEnabled="False" />
+                </StackPanel.ChildrenTransitions>
 
-                <TextBlock TextWrapping="Wrap">
-                    <Bold>2-</Bold>
-                    <Run>Put the YT Video/Playlist URL in the text box and press Enter key or press the button on the right</Run>
+                <!--  Downloads  -->
+                <TextBlock Margin="1,0,0,6" Style="{StaticResource SettingsSectionHeaderTextBlockStyle}">
+                    <Span><Bold>How to Download</Bold></Span>
                 </TextBlock>
-                <Image Height="200" Margin="0,0,0,9" Source="/Assets/Help/Two.png" />
+                <toolkit:SettingsExpander HorizontalAlignment="Stretch"
+                                          HorizontalContentAlignment="Stretch"
+                                          Description="How to download videos and audios"
+                                          Header="Video/Audio"
+                                          HeaderIcon="{ui:FontIcon Glyph=&#xEA69;}">
+                    <toolkit:SettingsExpander.Items>
+                        <toolkit:SettingsCard Padding="8,8,6,8">
+                            <toolkit:SettingsCard.Header>
+                                <RichTextBlock HorizontalAlignment="Left">
+                                    <Paragraph>
+                                        <Run>Click the button with the</Run>
+                                        <Run FontWeight="Bold">plus sign (+).</Run>
+                                    </Paragraph>
+                                </RichTextBlock>
+                            </toolkit:SettingsCard.Header>
+                        </toolkit:SettingsCard>
 
-                <TextBlock TextWrapping="Wrap">
-                    <Bold>3-</Bold>
-                    <Run>Click here to select Mp4 or Mp3 Format</Run>
-                </TextBlock>
-                <Image Height="320" Margin="0,0,0,9" Source="/Assets/Help/Three.png" />
+                        <toolkit:SettingsCard Padding="8,8,6,8">
+                            <toolkit:SettingsCard.Header>
+                                <RichTextBlock HorizontalAlignment="Left">
+                                    <Paragraph>
+                                        <Run>Paste the YT video URL into the</Run>
+                                        <Run FontWeight="Bold">URL field.</Run>
+                                    </Paragraph>
+                                </RichTextBlock>
+                            </toolkit:SettingsCard.Header>
+                        </toolkit:SettingsCard>
 
-                <TextBlock TextWrapping="Wrap">
-                    <Bold>4-</Bold>
-                    <Run>Click here to select Video Quality</Run>
-                </TextBlock>
-                <Image Height="320" Margin="0,0,0,9" Source="/Assets/Help/Four.png" />
+                        <toolkit:SettingsCard Padding="8,8,6,8">
+                            <toolkit:SettingsCard.Header>
+                                <RichTextBlock HorizontalAlignment="Left">
+                                    <Paragraph>
+                                        <Run>Select a format:</Run>
+                                        <Run FontWeight="Bold">MP4</Run>
+                                        <Run>for video or</Run>
+                                        <Run FontWeight="Bold">MP3</Run>
+                                        <Run>for audio. And select a quality,</Run>
+                                        <Run FontWeight="Bold">Audio</Run>
+                                        <Run>will always download the highest quality.</Run>
+                                    </Paragraph>
+                                </RichTextBlock>
+                            </toolkit:SettingsCard.Header>
+                        </toolkit:SettingsCard>
 
-                <TextBlock TextWrapping="Wrap">
-                    <Bold>5-</Bold>
-                    <Run>Click the Download Button</Run>
-                </TextBlock>
-                <Image Height="320" Margin="0,0,0,9" Source="/Assets/Help/Five.png" />
+                        <toolkit:SettingsCard Padding="8,8,6,8">
+                            <toolkit:SettingsCard.Header>
+                                <RichTextBlock HorizontalAlignment="Left">
+                                    <Paragraph>
+                                        <Run>Enter a name for the file; the default name will be used if the field is left blank.</Run>
+                                    </Paragraph>
+                                </RichTextBlock>
+                            </toolkit:SettingsCard.Header>
+                        </toolkit:SettingsCard>
 
-                <TextBlock TextWrapping="Wrap">
-                    <Bold>6-</Bold>
-                    <Run>Just wait for the download to finish and enjoy the Video/Music!</Run>
+                        <toolkit:SettingsCard Padding="8,8,6,8">
+                            <toolkit:SettingsCard.Header>
+                                <RichTextBlock HorizontalAlignment="Left">
+                                    <Paragraph>
+                                        <Run>Click the</Run>
+                                        <Run FontWeight="Bold">Download</Run>
+                                        <Run>button and choose where to save the file. To skip this step in the future, disable “Always ask where to save files” in Settings.</Run>
+                                    </Paragraph>
+                                </RichTextBlock>
+                            </toolkit:SettingsCard.Header>
+                        </toolkit:SettingsCard>
+                    </toolkit:SettingsExpander.Items>
+                </toolkit:SettingsExpander>
+
+                <toolkit:SettingsExpander HorizontalAlignment="Stretch"
+                                          HorizontalContentAlignment="Stretch"
+                                          Description="How to download playlists"
+                                          Header="Playlist"
+                                          HeaderIcon="{ui:FontIcon Glyph=&#xEA37;}">
+                    <toolkit:SettingsExpander.Items>
+                        <toolkit:SettingsCard Padding="8,8,6,8">
+                            <toolkit:SettingsCard.Header>
+                                <RichTextBlock HorizontalAlignment="Left">
+                                    <Paragraph>
+                                        <Run>Downloading a playlist works the same way, except you cannot set a custom filename. The chosen quality is applied to all videos in the playlist.</Run>
+                                    </Paragraph>
+                                </RichTextBlock>
+                            </toolkit:SettingsCard.Header>
+                        </toolkit:SettingsCard>
+
+                        <toolkit:SettingsCard Padding="8,8,6,8">
+                            <toolkit:SettingsCard.Header>
+                                <RichTextBlock HorizontalAlignment="Left">
+                                    <Paragraph>
+                                        <Run>The videos will be downloaded at the closest quality to the one you selected.</Run>
+                                    </Paragraph>
+                                </RichTextBlock>
+                            </toolkit:SettingsCard.Header>
+                        </toolkit:SettingsCard>
+                    </toolkit:SettingsExpander.Items>
+                </toolkit:SettingsExpander>
+
+                <!--  Troubleshooting  -->
+                <TextBlock Style="{StaticResource SettingsSectionHeaderTextBlockStyle}">
+                    <Span><Bold>Troubleshooting</Bold></Span>
                 </TextBlock>
-                <Image Height="120" Margin="0,0,0,9" Source="/Assets/Help/Six.png" />
+                <toolkit:SettingsExpander HorizontalAlignment="Stretch"
+                                          HorizontalContentAlignment="Stretch"
+                                          Description="Common Issues Involving the YT API"
+                                          Header="YT API"
+                                          HeaderIcon="{ui:FontIcon Glyph=&#xE774;}">
+                    <toolkit:SettingsExpander.Items>
+                        <toolkit:SettingsCard Padding="8,8,6,8">
+                            <toolkit:SettingsCard.Header>
+                                <RichTextBlock HorizontalAlignment="Left">
+                                    <Paragraph>
+                                        <Run>Making too many requests can cause your IP address to be blocked by the YT API, preventing you from downloading videos.</Run>
+                                    </Paragraph>
+                                </RichTextBlock>
+                            </toolkit:SettingsCard.Header>
+                        </toolkit:SettingsCard>
+
+                        <toolkit:SettingsCard Padding="8,8,6,8">
+                            <toolkit:SettingsCard.Header>
+                                <RichTextBlock HorizontalAlignment="Left">
+                                    <Paragraph>
+                                        <Run>If you see errors such as “Failed to extract cipher manifest”, please wait a few minutes before attempting to download again.</Run>
+                                    </Paragraph>
+                                </RichTextBlock>
+                            </toolkit:SettingsCard.Header>
+                        </toolkit:SettingsCard>
+
+                        <toolkit:SettingsCard Padding="8,8,6,8">
+                            <toolkit:SettingsCard.Header>
+                                <RichTextBlock HorizontalAlignment="Left">
+                                    <Paragraph>
+                                        <Run>Keep the</Run>
+                                        <Run FontWeight="Bold">Performance</Run>
+                                        <Run>settings at their default values. Higher values may trigger rate limiting and temporary IP blocks.</Run>
+                                    </Paragraph>
+                                </RichTextBlock>
+                            </toolkit:SettingsCard.Header>
+                        </toolkit:SettingsCard>
+                    </toolkit:SettingsExpander.Items>
+                </toolkit:SettingsExpander>
+
+                <!--  Support  -->
+                <TextBlock Style="{StaticResource SettingsSectionHeaderTextBlockStyle}">
+                    <Span><Bold>Support</Bold></Span>
+                </TextBlock>
+                <toolkit:SettingsExpander HorizontalAlignment="Stretch"
+                                          HorizontalContentAlignment="Stretch"
+                                          Description="Getting help and reporting problems"
+                                          Header="Need Help?"
+                                          HeaderIcon="{ui:FontIcon Glyph=&#xE897;}">
+                    <toolkit:SettingsExpander.Items>
+                        <toolkit:SettingsCard Padding="24,8,0,8">
+                            <toolkit:SettingsCard.Header>
+                                <RichTextBlock HorizontalAlignment="Left">
+                                    <Paragraph>
+                                        <Run>If something isn't working, check the</Run>
+                                        <Hyperlink NavigateUri="https://github.com/TXG0Fk3/YTDownloader/issues">known issues</Hyperlink>
+                                        <Run>or report a new one. Your feedback is what makes YT Downloader better!</Run>
+                                    </Paragraph>
+                                </RichTextBlock>
+                            </toolkit:SettingsCard.Header>
+                        </toolkit:SettingsCard>
+                    </toolkit:SettingsExpander.Items>
+                </toolkit:SettingsExpander>
             </StackPanel>
         </Grid>
     </ScrollViewer>
