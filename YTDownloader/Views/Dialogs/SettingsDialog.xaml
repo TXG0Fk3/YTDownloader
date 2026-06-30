@@ -22,7 +22,7 @@
 
         <Style x:Key="SettingsSectionHeaderTextBlockStyle" BasedOn="{StaticResource BodyStrongTextBlockStyle}" TargetType="TextBlock">
             <Style.Setters>
-                <Setter Property="Margin" Value="1,30,0,6" />
+                <Setter Property="Margin" Value="1,20,0,4" />
             </Style.Setters>
         </Style>
     </ContentDialog.Resources>
@@ -55,7 +55,7 @@
                 <TextBlock Style="{StaticResource SettingsSectionHeaderTextBlockStyle}">
                     <Span><Bold>Performance</Bold></Span>
                 </TextBlock>
-                <toolkit:SettingsCard Description="Limit how many videos can be downloaded at the same time. Needs restart to take effect." Header="Max Concurrent Downloads" HeaderIcon="{ui:FontIcon Glyph=&#xE896;}">
+                <toolkit:SettingsCard Description="Limit how many videos can be downloaded at the same time. Needs restart to take effect" Header="Max Concurrent Downloads" HeaderIcon="{ui:FontIcon Glyph=&#xE896;}">
                     <NumberBox Maximum="{x:Bind ViewModel.MaxConcurrentDownloadsMaximum}"
                                Minimum="1"
                                SpinButtonPlacementMode="Inline"
@@ -99,7 +99,7 @@
                 <toolkit:SettingsExpander Grid.Row="3"
                                           HorizontalAlignment="Stretch"
                                           HorizontalContentAlignment="Stretch"
-                                          Description="© 2026 TXG0Fk3. Licensed under GPL-3.0."
+                                          Description="© 2026 TXG0Fk3. Licensed under GPL-3.0"
                                           Header="YT Downloader"
                                           HeaderIcon="{ui:BitmapIcon Source=ms-appx:///Assets/Square44x44Logo.altform-lightunplated_targetsize-32.png}">
                     <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" IsTextSelectionEnabled="True">
