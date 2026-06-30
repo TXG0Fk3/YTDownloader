@@ -5,10 +5,16 @@
                xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
                xmlns:local="using:YTDownloader.Views.Dialogs"
                xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-               Title="Error"
                CloseButtonText="Close"
                Style="{StaticResource DefaultContentDialogStyle}"
                mc:Ignorable="d">
+    <ContentDialog.Title>
+        <StackPanel Orientation="Horizontal" Spacing="12">
+            <FontIcon FontSize="24" Glyph="&#xEA39;" />
+            <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="Error" />
+        </StackPanel>
+    </ContentDialog.Title>
+
     <StackPanel Width="324" MaxHeight="430" Spacing="6">
         <ScrollViewer>
             <TextBlock x:Name="ErrorTextBlock"

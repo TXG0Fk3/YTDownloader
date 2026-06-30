@@ -7,10 +7,16 @@
                xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
                xmlns:toolkit="using:CommunityToolkit.WinUI.Controls"
                xmlns:ui="using:CommunityToolkit.WinUI"
-               Title="Settings"
                CloseButtonText="Close"
                Style="{StaticResource DefaultContentDialogStyle}"
                mc:Ignorable="d">
+    <ContentDialog.Title>
+        <StackPanel Orientation="Horizontal" Spacing="12">
+            <FontIcon FontSize="24" Glyph="&#xE713;" />
+            <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="Settings" />
+        </StackPanel>
+    </ContentDialog.Title>
+
     <ContentDialog.Resources>
         <x:Double x:Key="SettingsCardSpacing">4</x:Double>
 

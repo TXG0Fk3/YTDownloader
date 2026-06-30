@@ -6,7 +6,6 @@
                xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
                xmlns:local="using:YTDownloader.Views.Dialogs"
                xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-               Title="Add New Download"
                CloseButtonText="Cancel"
                DefaultButton="Primary"
                IsPrimaryButtonEnabled="{x:Bind ViewModel.IsDownloadEnabled, Mode=OneWay}"
@@ -14,6 +13,13 @@
                PrimaryButtonText="Download"
                Style="{StaticResource DefaultContentDialogStyle}"
                mc:Ignorable="d">
+    <ContentDialog.Title>
+        <StackPanel Orientation="Horizontal" Spacing="10">
+            <FontIcon FontSize="24" Glyph="&#xE896;" />
+            <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="New Download" />
+        </StackPanel>
+    </ContentDialog.Title>
+
     <ContentDialog.Resources>
         <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
         <converters:BooleanNegationConverter x:Key="BooleanNegationConverter" />

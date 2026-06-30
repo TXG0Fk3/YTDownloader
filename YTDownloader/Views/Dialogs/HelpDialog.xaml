@@ -5,10 +5,16 @@
                xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
                xmlns:local="using:YTDownloader.Views.Dialogs"
                xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-               Title="Help"
                CloseButtonText="Close"
                Style="{StaticResource DefaultContentDialogStyle}"
                mc:Ignorable="d">
+    <ContentDialog.Title>
+        <StackPanel Orientation="Horizontal" Spacing="10">
+            <FontIcon FontSize="24" Glyph="&#xE897;" />
+            <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="Help" />
+        </StackPanel>
+    </ContentDialog.Title>
+
     <ScrollViewer Height="430">
         <Grid Width="342">
             <StackPanel>
