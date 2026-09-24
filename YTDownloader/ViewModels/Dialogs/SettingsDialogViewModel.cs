@@ -4,8 +4,10 @@ using System.Linq.Expressions;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
 using YTDownloader.Enums;
 using YTDownloader.Helpers;
+using YTDownloader.Messages;
 using YTDownloader.Models.Settings;
 using YTDownloader.Services;
 
@@ -14,11 +16,17 @@ namespace YTDownloader.ViewModels.Dialogs;
 public partial class SettingsDialogViewModel : ObservableObject
 {
     private readonly SettingsService _settingsService;
+    private readonly BrowserService _browserService;
+    private readonly CredentialService _credentialService;
     private readonly DialogService _dialogService;
+    private readonly IMessenger _messenger;
 
     private bool _isInitializing = true;
 
     public string YTDownloaderVersion { get; } = AppInfoHelper.Version;
+
+    [ObservableProperty]
+    public partial bool IsSettingsOpen { get; set; } = true;
 
     public IReadOnlyList<ThemeMode> ThemeOptions { get; } =
         new List<ThemeMode>() { ThemeMode.Light, ThemeMode.Dark, ThemeMode.System };
@@ -41,15 +49,31 @@ public partial class SettingsDialogViewModel : ObservableObject
     [ObservableProperty]
     public partial bool AlwaysAskWhereSave { get; set; }
 
-    public SettingsDialogViewModel(SettingsService settingsService, DialogService dialogService)
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(AccountText), nameof(LogInButtonText))]
+    public partial bool IsLoggedIn { get; set; }
+
+    public string AccountText => IsLoggedIn ? "Logged-in Account" : "No Account";
+    public string LogInButtonText => IsLoggedIn ? "Logout" : "LogIn";
+
+    public SettingsDialogViewModel(
+        SettingsService settingsService,
+        BrowserService browserService,
+        CredentialService credentialService,
+        DialogService dialogService,
+        IMessenger messenger
+    )
     {
         _settingsService = settingsService;
+        _browserService = browserService;
+        _credentialService = credentialService;
         _dialogService = dialogService;
+        _messenger = messenger;
 
-        _ = LoadSettingsAsync();
+        LoadSettingsAsync();
     }
 
-    private async Task LoadSettingsAsync()
+    private void LoadSettingsAsync()
     {
         SelectedThemeMode = _settingsService.Current.Theme;
         MaxConcurrentPlaylistFetches = _settingsService
@@ -58,8 +82,33 @@ public partial class SettingsDialogViewModel : ObservableObject
         MaxConcurrentDownloads = _settingsService.Current.MaxConcurrentDownloads;
         DefaultDownloadsPath = _settingsService.Current.DefaultDownloadsPath;
         AlwaysAskWhereSave = _settingsService.Current.AlwaysAskWhereSave;
+        IsLoggedIn = _credentialService.HasCookies();
 
         _isInitializing = false;
+    }
+
+    [RelayCommand]
+    private async Task LoginOrLogout()
+    {
+        if (IsLoggedIn)
+        {
+            _credentialService.ClearCookies();
+            IsLoggedIn = false;
+            return;
+        }
+
+        IsSettingsOpen = false;
+        try
+        {
+            var cookies = await _browserService.ShowYTLoginAndGetCookies();
+            _credentialService.SaveCookies(cookies);
+            _messenger.Send(new LoginResultMessage(true));
+        }
+        catch (OperationCanceledException) { }
+        catch (Exception)
+        {
+            _messenger.Send(new LoginResultMessage(false));
+        }
     }
 
     [RelayCommand]

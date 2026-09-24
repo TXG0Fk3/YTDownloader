@@ -51,6 +51,14 @@
                     </toolkit:SettingsExpander.Items>
                 </toolkit:SettingsExpander>
 
+                <!--  Account Section  -->
+                <TextBlock Style="{StaticResource SettingsSectionHeaderTextBlockStyle}">
+                    <Span><Bold>Account</Bold></Span>
+                </TextBlock>
+                <toolkit:SettingsCard Description="Sign in to access private/age-restricted videos and reduce rate limits" Header="{x:Bind ViewModel.AccountText, Mode=OneWay}" HeaderIcon="{ui:FontIcon Glyph=&#xE77B;}">
+                    <Button Command="{x:Bind ViewModel.LoginOrLogoutCommand}" Content="{x:Bind ViewModel.LogInButtonText, Mode=OneWay}" />
+                </toolkit:SettingsCard>
+
                 <!--  Performance Section  -->
                 <TextBlock Style="{StaticResource SettingsSectionHeaderTextBlockStyle}">
                     <Span><Bold>Performance</Bold></Span>
