@@ -23,7 +23,7 @@ public class SettingsService
     {
         _filePath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "YT Downloader",
+            "YTDownloader",
             "config.json"
         );
 
