@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -14,12 +15,18 @@ namespace YTDownloader.Services;
 
 public class YoutubeService
 {
-    private readonly YoutubeClient _youtubeClient = new();
     private readonly SettingsService _settingsService;
+    private readonly CredentialService _credentialService;
 
-    public YoutubeService(SettingsService settingsService)
+    private YoutubeClient _youtubeClient;
+
+    public YoutubeService(SettingsService settingsService, CredentialService credentialService)
     {
         _settingsService = settingsService;
+        _credentialService = credentialService;
+
+        CreateOrUpdateYoutubeClient();
+        _credentialService.CookiesUpdated += CreateOrUpdateYoutubeClient;
     }
 
     public async Task<VideoInfo> GetVideoAsync(string videoUrl, CancellationToken ct)
@@ -217,6 +224,13 @@ public class YoutubeService
             is AudioOnlyStreamInfo audio
             ? audio
             : null;
+
+    [MemberNotNull(nameof(_youtubeClient))]
+    private void CreateOrUpdateYoutubeClient()
+    {
+        var cookies = _credentialService.LoadCookies();
+        _youtubeClient = cookies == null ? new() : new(cookies);
+    }
 
     private static int Score(StreamOption stream, int targetResolution, int targetFps)
     {
