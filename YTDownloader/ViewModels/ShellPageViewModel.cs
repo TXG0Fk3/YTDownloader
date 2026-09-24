@@ -18,7 +18,8 @@ public partial class ShellPageViewModel
         IRecipient<DownloadRequestMessage>,
         IRecipient<RetryDownloadRequestMessage>,
         IRecipient<RemoveDownloadRequestMessage>,
-        IRecipient<ErrorDialogRequestMessage>
+        IRecipient<ErrorDialogRequestMessage>,
+        IRecipient<LoginResultMessage>
 {
     private readonly DownloadsService _downloadsService;
     private readonly SettingsService _settingsService;
@@ -31,6 +32,12 @@ public partial class ShellPageViewModel
 
     [ObservableProperty]
     public partial SortDirection SortDirection { get; set; }
+
+    [ObservableProperty]
+    public partial bool IsLoginSuccessCardVisible { get; set; } = false;
+
+    [ObservableProperty]
+    public partial bool IsLoginFailedCardVisible { get; set; } = false;
 
     public bool IsDownloadItemsEmpty => Downloads.Count == 0;
 
@@ -61,6 +68,12 @@ public partial class ShellPageViewModel
         RemoveDownload(message.DownloadableViewModel);
 
     public void Receive(ErrorDialogRequestMessage message) => _ = OpenError(message.ErrorMessage);
+
+    public void Receive(LoginResultMessage message)
+    {
+        IsLoginSuccessCardVisible = message.IsSuccess;
+        IsLoginFailedCardVisible = !message.IsSuccess;
+    }
 
     [RelayCommand]
     private void SetSortDirection(string value) => SortDirection = Enum.Parse<SortDirection>(value);
