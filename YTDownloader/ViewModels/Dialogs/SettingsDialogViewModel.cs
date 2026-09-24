@@ -54,7 +54,7 @@ public partial class SettingsDialogViewModel : ObservableObject
     public partial bool IsLoggedIn { get; set; }
 
     public string AccountText => IsLoggedIn ? "Logged-in Account" : "No Account";
-    public string LogInButtonText => IsLoggedIn ? "Logout" : "LogIn";
+    public string LogInButtonText => IsLoggedIn ? "Logout" : "Login";
 
     public SettingsDialogViewModel(
         SettingsService settingsService,
