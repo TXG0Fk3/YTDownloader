@@ -32,6 +32,8 @@ public partial class App : Application
         services.AddSingleton<YoutubeService>();
         services.AddSingleton<DownloadsService>();
         services.AddSingleton<SettingsService>();
+        services.AddSingleton<BrowserService>();
+        services.AddSingleton<CredentialService>();
         services.AddSingleton<DialogService>();
         services.AddSingleton<IMessenger>(WeakReferenceMessenger.Default);
         _services = services.BuildServiceProvider();
@@ -64,6 +66,7 @@ public partial class App : Application
 
         await Task.Delay(50); // Small delay to avoid black window
         _mainWindow.Activate();
+        GetService<BrowserService>().SetHost(_mainWindow);
 
         await Task.Delay(400); // Small delay to ensure the main window is fully ready before navigating
         _mainWindow.NavigateToShell();
