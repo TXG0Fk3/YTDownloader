@@ -1,4 +1,6 @@
 using System;
+using System.Diagnostics;
+using System.Linq;
 using System.Runtime.InteropServices;
 using Microsoft.UI;
 using Microsoft.UI.Windowing;
@@ -9,6 +11,7 @@ using Microsoft.UI.Xaml.Media.Animation;
 using Windows.Graphics;
 using Windows.UI;
 using YTDownloader.Enums;
+using YTDownloader.Models;
 using YTDownloader.Models.Settings;
 using YTDOwnloader.Models.Settings;
 using YTDownloader.Services;
@@ -16,7 +19,7 @@ using YTDownloader.Views;
 
 namespace YTDownloader;
 
-public sealed partial class MainWindow : Window
+public sealed partial class MainWindow : Window, IBrowserHost
 {
     private const string WindowTitle = "YT Downloader";
     private const string WindowIconPath = "Assets/AppIcon.ico";
@@ -29,7 +32,9 @@ public sealed partial class MainWindow : Window
     private readonly double _scaleFactor;
     private readonly OverlappedPresenter _presenter;
 
-    private readonly Frame _rootFrame = new() { Content = new SplashPage() };
+    private Storyboard? _currentStoryboard;
+
+    public event Action? UserCancelledInteraction;
 
     public MainWindow()
     {
@@ -40,7 +45,6 @@ public sealed partial class MainWindow : Window
         AppWindow.SetIcon(WindowIconPath);
         ExtendsContentIntoTitleBar = true;
 
-        Content = _rootFrame;
         SetTheme(_settingsService.Current.Theme);
 
         _presenter = OverlappedPresenter.Create();
@@ -68,7 +72,99 @@ public sealed partial class MainWindow : Window
     public void NavigateToShell()
     {
         SystemBackdrop = new MicaBackdrop();
-        _rootFrame.Navigate(typeof(ShellPage), null, new DrillInNavigationTransitionInfo());
+        RootFrame.Navigate(typeof(ShellPage), null, new DrillInNavigationTransitionInfo());
+    }
+
+    public void AttachBrowser(object browser)
+    {
+        if (browser is WebView2 wv)
+            BrowserContainer.Children.Add(wv);
+    }
+
+    public void DetachBrowser(object browser)
+    {
+        if (browser is WebView2 wv)
+            BrowserContainer.Children.Remove(wv);
+    }
+
+    public void ShowBrowser()
+    {
+        _currentStoryboard?.Stop();
+
+        if (BrowserContainer.Children.FirstOrDefault() is not WebView2)
+        {
+            Debug.WriteLine("ShowBrowser called but WebView2 not found");
+            return;
+        }
+
+        SizeChanged += OnWindowSizeChangedWhileBrowserVisible;
+        CancelBrowserInteractionBT.Visibility = Visibility.Visible;
+
+        BrowserContainer.Width = AppWindow.Size.Width;
+        BrowserContainer.Height = AppWindow.Size.Height;
+        BrowserContainer.IsHitTestVisible = true;
+
+        BrowserContainer.RenderTransform = new TranslateTransform { Y = 100 };
+        BrowserContainer.Opacity = 0;
+
+        _currentStoryboard = new Storyboard();
+        var slideAnimation = new DoubleAnimation
+        {
+            To = 0,
+            Duration = new Duration(TimeSpan.FromMilliseconds(250)),
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut },
+        };
+        Storyboard.SetTarget(slideAnimation, BrowserContainer.RenderTransform);
+        Storyboard.SetTargetProperty(slideAnimation, "Y");
+        _currentStoryboard.Children.Add(slideAnimation);
+
+        var fadeAnimation = new DoubleAnimation
+        {
+            To = 1,
+            Duration = new Duration(TimeSpan.FromMilliseconds(250)),
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut },
+        };
+        Storyboard.SetTarget(fadeAnimation, BrowserContainer);
+        Storyboard.SetTargetProperty(fadeAnimation, "Opacity");
+        _currentStoryboard.Children.Add(fadeAnimation);
+
+        _currentStoryboard.Completed += (s, e) =>
+        {
+            BrowserContainer.Opacity = 1;
+            BrowserContainer.RenderTransform = new TranslateTransform { Y = 0 };
+        };
+
+        _currentStoryboard.Begin();
+    }
+
+    public void HideBrowser()
+    {
+        CancelBrowserInteractionBT.Visibility = Visibility.Collapsed;
+
+        _currentStoryboard?.Stop();
+        _currentStoryboard = new Storyboard();
+
+        var fadeAnimation = new DoubleAnimation
+        {
+            To = 0,
+            Duration = new Duration(TimeSpan.FromMilliseconds(200)),
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn },
+        };
+        Storyboard.SetTarget(fadeAnimation, BrowserContainer);
+        Storyboard.SetTargetProperty(fadeAnimation, "Opacity");
+        _currentStoryboard.Children.Add(fadeAnimation);
+
+        _currentStoryboard.Completed += (s, e) =>
+        {
+            SizeChanged -= OnWindowSizeChangedWhileBrowserVisible;
+
+            BrowserContainer.Opacity = 1;
+            BrowserContainer.IsHitTestVisible = false;
+
+            BrowserContainer.RenderTransform = null;
+        };
+
+        _currentStoryboard.Begin();
     }
 
     private void SetTheme(ThemeMode themeMode)
@@ -79,7 +175,7 @@ public sealed partial class MainWindow : Window
             ThemeMode.Dark => ElementTheme.Dark,
             _ => ElementTheme.Default,
         };
-        _rootFrame.RequestedTheme = newTheme;
+        RootFrame.RequestedTheme = newTheme;
 
         if (newTheme == ElementTheme.Default)
             newTheme =
@@ -137,6 +233,18 @@ public sealed partial class MainWindow : Window
         _settingsService.SettingChanged -= Settings_Changed;
         Closed -= MainWindow_Closed;
         Close();
+    }
+
+    private void CancelBrowserInteractionBT_Click(object sender, RoutedEventArgs e)
+    {
+        Debug.WriteLine("teste");
+        UserCancelledInteraction?.Invoke();
+    }
+
+    private void OnWindowSizeChangedWhileBrowserVisible(object sender, WindowSizeChangedEventArgs e)
+    {
+        BrowserContainer.Width = AppWindow.Size.Width;
+        BrowserContainer.Height = AppWindow.Size.Height;
     }
 
     [DllImport("user32.dll")]
